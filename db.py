@@ -28,8 +28,9 @@ class Database:
         return self.db[name]
 
     def validate_email(self, email):
-        pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
-        return re.match(pattern, email) is not None
+        # Relaxed regex to be more permissive but still catch obvious errors
+        pattern = r'^[^@\s]+@[^@\s]+\.[^@\s]+$'
+        return re.match(pattern, email.strip()) is not None
 
     def validate_mobile(self, mobile):
         if not mobile: return True
@@ -55,11 +56,15 @@ class Database:
             return False
 
     def check_email_exists(self, email):
+        if not email: return False
+        email = email.strip().lower()
         users = self.get_collection('users')
         if users is None: return False
         return users.find_one({'email': email}) is not None
 
     def register_user(self, email, password, first_name, last_name, mobile, signup_source, signup_ip):
+        if not email: return False, "Email required"
+        email = email.strip().lower()
         if not self.validate_email(email): return False, "Invalid email format"
         if self.check_email_exists(email): return False, "Email already registered"
         
@@ -79,6 +84,8 @@ class Database:
         return True, "User registered successfully"
 
     def authenticate_user(self, email, password):
+        if not email: return None
+        email = email.strip().lower()
         users = self.get_collection('users')
         if users is None: return None
         user = users.find_one({'email': email})
@@ -91,6 +98,8 @@ class Database:
         return None
 
     def get_user_profile(self, email):
+        if not email: return None
+        email = email.strip().lower()
         users = self.get_collection('users')
         user = users.find_one({'email': email})
         if not user: return None
@@ -106,6 +115,7 @@ class Database:
         return profile
 
     def update_user_profile(self, email, **kwargs):
+        email = email.strip().lower()
         users = self.get_collection('users')
         # Map fields to match document structure
         update_data = {}
@@ -197,10 +207,11 @@ db_instance = Database()
 def init_db(): return db_instance.init_chat_tables()
 def get_user(email): return db_instance.get_user_profile(email)
 def create_user(username, email, password):
+    if not username: return None, "Username required"
     parts = username.split()
     first = parts[0]; last = ' '.join(parts[1:]) if len(parts) > 1 else ''
     success, msg = db_instance.register_user(email, password, first, last, '', 'Web', '127.0.0.1')
-    return email if success else None
+    return (email if success else None), msg
 
 def verify_user(email, password): return db_instance.authenticate_user(email, password)
 def add_message(email, name, room, msg, time=None): return db_instance.add_message(email, name, room, msg, time)

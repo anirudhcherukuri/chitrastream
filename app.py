@@ -102,14 +102,14 @@ def api_signup():
             return jsonify({'success': False, 'message': 'Email already registered!'}), 400
         
         # Create user
-        user_id = create_user(username, email, password)
+        user_id, msg = create_user(username, email, password)
         if user_id:
             session['user_id'] = user_id
             session['username'] = username
             session.permanent = True
             return jsonify({'success': True, 'user': {'id': user_id, 'username': username, 'email': email}})
         else:
-            return jsonify({'success': False, 'message': 'Error creating account. Try again.'}), 500
+            return jsonify({'success': False, 'message': msg or 'Error creating account. Try again.'}), 400
     except Exception as e:
         print(f"[ERROR] Signup Exception: {e}")
         return jsonify({'success': False, 'message': 'Server error during signup.'}), 500
