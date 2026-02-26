@@ -56,6 +56,7 @@ class Database:
         if self.check_email_exists(email): return False, "Email already registered"
         
         users = self.get_collection('users')
+        if users is None: return False, "Database connection error"
         user_data = {
             'email': email,
             'password_hash': self.hash_password(password),
@@ -71,6 +72,7 @@ class Database:
 
     def authenticate_user(self, email, password):
         users = self.get_collection('users')
+        if users is None: return None
         user = users.find_one({'email': email})
         if user and self.verify_password(password, user['password_hash']):
             return {
@@ -109,6 +111,7 @@ class Database:
 
     def get_all_movies(self, limit=100, offset=0):
         movies = self.get_collection('movies')
+        if movies is None: return []
         cursor = movies.find().skip(offset).limit(limit)
         results = []
         for doc in cursor:
@@ -118,6 +121,7 @@ class Database:
 
     def get_movie_details(self, movie_id):
         movies = self.get_collection('movies')
+        if movies is None: return None
         try:
             query = {'_id': ObjectId(movie_id)} if ObjectId.is_valid(movie_id) else {'MovieID': int(movie_id)}
             movie = movies.find_one(query)
@@ -129,6 +133,7 @@ class Database:
 
     def add_message(self, user_email, username, room, message, timestamp=None):
         messages = self.get_collection('chat_messages')
+        if messages is None: return False
         msg_data = {
             'user_email': user_email,
             'username': username,
