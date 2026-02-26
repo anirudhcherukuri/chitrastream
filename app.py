@@ -34,8 +34,12 @@ app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=7)
 app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 
-# Enable CORS for React frontend
-CORS(app, supports_credentials=True, origins=["http://localhost:3000", "http://localhost:5173"])
+# Enable CORS for React frontend (including production)
+CORS(app, supports_credentials=True, origins=[
+    "http://localhost:3000", 
+    "http://localhost:5173", 
+    "https://chitrastream.onrender.com"
+])
 
 # Initialize Socket.IO with eventlet mode (FIXED for Render)
 socketio = SocketIO(app, 
@@ -83,43 +87,54 @@ def get_current_user():
 
 @app.route('/api/auth/signup', methods=['POST'])
 def api_signup():
-    data = request.json
-    username = data.get('username')
-    email = data.get('email')
-    password = data.get('password')
-    
-    if not username or not email or not password:
-        return jsonify({'success': False, 'message': 'All fields are required!'}), 400
-    
-    # Check if user exists
-    existing_user = get_user(email=email)
-    if existing_user:
-        return jsonify({'success': False, 'message': 'Email already registered!'}), 400
-    
-    # Create user
-    user_id = create_user(username, email, password)
-    if user_id:
-        session['user_id'] = user_id
-        session['username'] = username
-        session.permanent = True
-        return jsonify({'success': True, 'user': {'id': user_id, 'username': username, 'email': email}})
-    else:
-        return jsonify({'success': False, 'message': 'Error creating account. Try again.'}), 500
+    try:
+        data = request.get_json(silent=True) or {}
+        username = data.get('username')
+        email = data.get('email')
+        password = data.get('password')
+        
+        if not username or not email or not password:
+            return jsonify({'success': False, 'message': 'All fields are required!'}), 400
+        
+        # Check if user exists
+        existing_user = get_user(email=email)
+        if existing_user:
+            return jsonify({'success': False, 'message': 'Email already registered!'}), 400
+        
+        # Create user
+        user_id = create_user(username, email, password)
+        if user_id:
+            session['user_id'] = user_id
+            session['username'] = username
+            session.permanent = True
+            return jsonify({'success': True, 'user': {'id': user_id, 'username': username, 'email': email}})
+        else:
+            return jsonify({'success': False, 'message': 'Error creating account. Try again.'}), 500
+    except Exception as e:
+        print(f"[ERROR] Signup Exception: {e}")
+        return jsonify({'success': False, 'message': 'Server error during signup.'}), 500
 
 @app.route('/api/auth/login', methods=['POST'])
 def api_login():
-    data = request.json
-    email = data.get('email')
-    password = data.get('password')
-    
-    user = verify_user(email, password)
-    if user:
-        session['user_id'] = user['id']
-        session['username'] = user['username']
-        session.permanent = True
-        return jsonify({'success': True, 'user': {'id': user['id'], 'username': user['username'], 'email': user['email']}})
-    else:
-        return jsonify({'success': False, 'message': 'Invalid email or password!'}), 401
+    try:
+        data = request.get_json(silent=True) or {}
+        email = data.get('email')
+        password = data.get('password')
+        
+        if not email or not password:
+            return jsonify({'success': False, 'message': 'Email and password required!'}), 400
+            
+        user = verify_user(email, password)
+        if user:
+            session['user_id'] = user['id']
+            session['username'] = user['username']
+            session.permanent = True
+            return jsonify({'success': True, 'user': {'id': user['id'], 'username': user['username'], 'email': user['email']}})
+        else:
+            return jsonify({'success': False, 'message': 'Invalid email or password!'}), 401
+    except Exception as e:
+        print(f"[ERROR] Login Exception: {e}")
+        return jsonify({'success': False, 'message': 'Server error during login.'}), 500
 
 @app.route('/api/auth/logout', methods=['POST'])
 def api_logout():

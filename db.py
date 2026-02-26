@@ -41,9 +41,17 @@ class Database:
         return bcrypt.hashpw(password.encode('utf-8'), salt).decode('utf-8')
 
     def verify_password(self, password, password_hash):
+        if not password or not password_hash: return False
         try:
+            # Handle migrated Werkzeug/Flask-Security hashes
+            if password_hash.startswith(('scrypt:', 'pbkdf2:', 'sha256:')):
+                from werkzeug.security import check_password_hash
+                return check_password_hash(password_hash, password)
+            
+            # Handle new Bcrypt hashes
             return bcrypt.checkpw(password.encode('utf-8'), password_hash.encode('utf-8'))
-        except:
+        except Exception as e:
+            print(f"[DEBUG] Password verification error: {e}")
             return False
 
     def check_email_exists(self, email):
