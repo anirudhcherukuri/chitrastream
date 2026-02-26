@@ -8,3 +8,4 @@ openai
 python-dateutil
 gunicorn
 eventlet
+certifi

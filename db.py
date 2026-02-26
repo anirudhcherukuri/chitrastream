@@ -3,6 +3,7 @@ import bcrypt
 import re
 from datetime import datetime
 import os
+import certifi
 from bson import ObjectId
 
 class Database:
@@ -22,7 +23,8 @@ class Database:
                 connectTimeoutMS=15000,
                 socketTimeoutMS=15000,
                 connect=False,
-                retryWrites=True
+                retryWrites=True,
+                tlsCAFile=certifi.where()
             )
             self.db = self.client[self.db_name]
             # We don't ping in __init__ to allow lazy connection
