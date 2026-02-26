@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, session, jsonify, flash
+from flask import Flask, render_template, request, redirect, url_for, session, jsonify, flash, send_from_directory
 from flask_socketio import SocketIO, emit, join_room, leave_room, disconnect
 from flask_cors import CORS
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -73,24 +73,8 @@ def get_current_user():
         
     return None
 
-# ==================== Authentication Routes ====================
-
-# ==================== Authentication Routes (Redundant for React) ====================
-# These are kept commented for reference but could be removed as we use /api/* routes now.
-
-from flask import send_from_directory
-
-@app.route('/', defaults={'path': ''})
-@app.route('/<path:path>')
-def serve(path):
-    if path != "" and os.path.exists(app.static_folder + '/' + path):
-        return send_from_directory(app.static_folder, path)
-    else:
-        return send_from_directory(app.static_folder, 'index.html')
-
 # ==================== Main Routes (React will handle these via routing) ====================
-# We keep these only if we want Flask to serve the React index.html in production.
-# For now, we are using Vite for frontend development.
+# We use /api/* routes for data and the serve function at the bottom for the React SPA.
 
 # ==================== API Routes ====================
 
@@ -1072,6 +1056,20 @@ def not_found(e):
 @app.errorhandler(500)
 def server_error(e):
     return render_template('500.html'), 500
+
+# ==================== Serve React Frontend ====================
+
+@app.route('/', defaults={'path': ''})
+@app.route('/<path:path>')
+def serve(path):
+    # Don't serve static files if the path starts with /api to avoid misrouting
+    if path.startswith('api/'):
+        return jsonify({'error': 'Not Found', 'path': path}), 404
+        
+    if path != "" and os.path.exists(app.static_folder + '/' + path):
+        return send_from_directory(app.static_folder, path)
+    else:
+        return send_from_directory(app.static_folder, 'index.html')
 
 # ==================== Run Application ====================
 
