@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.env
+.venv
+venv/
+ENV/
+backend_logs.txt
+backend_logs_mongo.txt
+*.db
+*.sqlite3
+
+# Node
+node_modules/
+frontend/node_modules/
+dist/
+frontend/dist/
+.DS_Store
+
+# IDEs
+.vscode/
+.idea/
+
+# Artifacts
+C:\Users\vamsh\.gemini\antigravity\brain\
+brain/
+.system_generated/

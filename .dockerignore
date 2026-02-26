@@ -1,0 +1,14 @@
+__pycache__/
+*.pyc
+.env
+.git
+.gitignore
+.venv
+frontend/node_modules/
+node_modules/
+*.db
+backend_logs.txt
+test_out.txt
+test_db_conn.py
+test_init_db.py
+tiny_server.py

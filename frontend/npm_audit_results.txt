@@ -1,0 +1,24 @@
+# npm audit report
+
+minimatch  <10.2.1
+Severity: high
+minimatch has a ReDoS via repeated wildcards with non-matching literal in pattern - https://github.com/advisories/GHSA-3ppc-4f35-3m26
+fix available via `npm audit fix --force`
+Will install eslint@10.0.2, which is a breaking change
+node_modules/minimatch
+  @eslint/config-array  <=0.22.0
+  Depends on vulnerable versions of minimatch
+  node_modules/@eslint/config-array
+    eslint  0.7.1 - 2.0.0-rc.1 || 4.1.0 - 10.0.0-rc.2
+    Depends on vulnerable versions of @eslint/config-array
+    Depends on vulnerable versions of @eslint/eslintrc
+    Depends on vulnerable versions of minimatch
+    node_modules/eslint
+  @eslint/eslintrc  0.0.1 || >=0.1.1
+  Depends on vulnerable versions of minimatch
+  node_modules/@eslint/eslintrc
+
+4 high severity vulnerabilities
+
+To address all issues (including breaking changes), run:
+  npm audit fix --force

@@ -1,0 +1,82 @@
+[
+  {
+    "COLUMN_NAME": "MovieID",
+    "DATA_TYPE": "int",
+    "CHARACTER_MAXIMUM_LENGTH": null
+  },
+  {
+    "COLUMN_NAME": "IMDbID",
+    "DATA_TYPE": "varchar",
+    "CHARACTER_MAXIMUM_LENGTH": 20
+  },
+  {
+    "COLUMN_NAME": "Title",
+    "DATA_TYPE": "nvarchar",
+    "CHARACTER_MAXIMUM_LENGTH": 255
+  },
+  {
+    "COLUMN_NAME": "Year",
+    "DATA_TYPE": "int",
+    "CHARACTER_MAXIMUM_LENGTH": null
+  },
+  {
+    "COLUMN_NAME": "Genre",
+    "DATA_TYPE": "nvarchar",
+    "CHARACTER_MAXIMUM_LENGTH": 100
+  },
+  {
+    "COLUMN_NAME": "Director",
+    "DATA_TYPE": "nvarchar",
+    "CHARACTER_MAXIMUM_LENGTH": 255
+  },
+  {
+    "COLUMN_NAME": "Cast",
+    "DATA_TYPE": "nvarchar",
+    "CHARACTER_MAXIMUM_LENGTH": -1
+  },
+  {
+    "COLUMN_NAME": "Rating",
+    "DATA_TYPE": "decimal",
+    "CHARACTER_MAXIMUM_LENGTH": null
+  },
+  {
+    "COLUMN_NAME": "Plot",
+    "DATA_TYPE": "nvarchar",
+    "CHARACTER_MAXIMUM_LENGTH": -1
+  },
+  {
+    "COLUMN_NAME": "PosterURL",
+    "DATA_TYPE": "nvarchar",
+    "CHARACTER_MAXIMUM_LENGTH": 500
+  },
+  {
+    "COLUMN_NAME": "Runtime",
+    "DATA_TYPE": "int",
+    "CHARACTER_MAXIMUM_LENGTH": null
+  },
+  {
+    "COLUMN_NAME": "Language",
+    "DATA_TYPE": "nvarchar",
+    "CHARACTER_MAXIMUM_LENGTH": 100
+  },
+  {
+    "COLUMN_NAME": "Country",
+    "DATA_TYPE": "nvarchar",
+    "CHARACTER_MAXIMUM_LENGTH": 100
+  },
+  {
+    "COLUMN_NAME": "CreatedAt",
+    "DATA_TYPE": "datetime2",
+    "CHARACTER_MAXIMUM_LENGTH": null
+  },
+  {
+    "COLUMN_NAME": "UpdatedAt",
+    "DATA_TYPE": "datetime2",
+    "CHARACTER_MAXIMUM_LENGTH": null
+  },
+  {
+    "COLUMN_NAME": "ViewCount",
+    "DATA_TYPE": "int",
+    "CHARACTER_MAXIMUM_LENGTH": null
+  }
+]

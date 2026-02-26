@@ -1,0 +1,70 @@
+
+> frontend@0.0.0 lint
+> eslint .
+
+
+C:\Users\vamsh\OneDrive\Desktop\signup_app\frontend\src\components\AIAssistant.jsx
+  254:14  error  'err' is defined but never used  no-unused-vars
+
+C:\Users\vamsh\OneDrive\Desktop\signup_app\frontend\src\components\MovieModal.jsx
+  104:56  error    'user' is defined but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          no-unused-vars
+  117:14  error    'err' is defined but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           no-unused-vars
+  123:5   error    Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+  121 |
+  122 |   useEffect(() => {
+> 123 |     fetchMovie()
+      |     ^^^^^^^^^^ Avoid calling setState() directly within an effect
+  124 |     document.body.style.overflow = 'hidden'
+  125 |     return () => { document.body.style.overflow = 'auto' }
+  126 |   }, [movieId])  react-hooks/set-state-in-effect
+  126:6   warning  React Hook useEffect has a missing dependency: 'fetchMovie'. Either include it or remove the dependency array                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             react-hooks/exhaustive-deps
+
+C:\Users\vamsh\OneDrive\Desktop\signup_app\frontend\src\pages\Community.jsx
+  282:12  error  'e' is defined but never used                                                                no-unused-vars
+  316:10  error  'onlineCount' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u  no-unused-vars
+
+C:\Users\vamsh\OneDrive\Desktop\signup_app\frontend\src\pages\Dashboard.jsx
+   10:7   error  'upscalePoster' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  no-unused-vars
+  139:83  error  Error: Cannot call impure function during render
+
+`Math.random` is an impure function. Calling an impure function can produce unstable results that update unpredictably when the component happens to re-render. (https://react.dev/reference/rules/components-and-hooks-must-be-pure#components-and-hooks-must-be-idempotent).
+
+  137 |               <div key={m.id || i} className="movie-card" onClick={() => onMovieClick(m.id || m.MovieID)}>
+  138 |                 <img className="movie-card-img" src={bgUrl} alt={m.title || m.Title} loading="lazy" onError={handleImageError} />
+> 139 |                 <div className="movie-card-rating">Ô¡É {m.worth_score || Math.floor(Math.random() * 20 + 80)}%</div>
+      |                                                                                   ^^^^^^^^^^^^^ Cannot call impure function
+  140 |                 <div className="movie-card-overlay">
+  141 |                   <div className="movie-card-title">{m.title || m.Title}</div>
+  142 |                   <div className="movie-card-meta">  react-hooks/purity
+
+C:\Users\vamsh\OneDrive\Desktop\signup_app\frontend\src\pages\EditProfile.jsx
+  4:39  error  'user' is defined but never used  no-unused-vars
+
+C:\Users\vamsh\OneDrive\Desktop\signup_app\frontend\src\pages\MovieDetails.jsx
+  118:18  error    'err' is defined but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     no-unused-vars
+  124:9   error    Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+  122 |
+  123 |     useEffect(() => {
+> 124 |         fetchMovie()
+      |         ^^^^^^^^^^ Avoid calling setState() directly within an effect
+  125 |     }, [id])
+  126 |
+  127 |     const handleWatchlist = async () => {  react-hooks/set-state-in-effect
+  125:8   warning  React Hook useEffect has a missing dependency: 'fetchMovie'. Either include it or remove the dependency array                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       react-hooks/exhaustive-deps
+
+Ô£û 13 problems (11 errors, 2 warnings)
+

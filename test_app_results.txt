@@ -1,0 +1,15 @@
+============================= test session starts =============================
+platform win32 -- Python 3.11.9, pytest-9.0.2, pluggy-1.6.0 -- C:\Users\vamsh\AppData\Local\Microsoft\WindowsApps\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\python.exe
+cachedir: .pytest_cache
+rootdir: C:\Users\vamsh\OneDrive\Desktop\signup_app
+plugins: anyio-4.9.0, timeout-2.4.0
+collecting ... collected 6 items
+
+test_app.py::test_login_success PASSED                                   [ 16%]
+test_app.py::test_login_failure PASSED                                   [ 33%]
+test_app.py::test_signup_success PASSED                                  [ 50%]
+test_app.py::test_signup_existing_email PASSED                           [ 66%]
+test_app.py::test_auth_status_unauthenticated PASSED                     [ 83%]
+test_app.py::test_auth_status_authenticated PASSED                       [100%]
+
+============================== 6 passed in 2.45s ==============================

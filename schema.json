@@ -1,0 +1,120 @@
+{
+  "columns": [
+    {
+      "COLUMN_NAME": "MovieID",
+      "DATA_TYPE": "int"
+    },
+    {
+      "COLUMN_NAME": "IMDbID",
+      "DATA_TYPE": "varchar"
+    },
+    {
+      "COLUMN_NAME": "Title",
+      "DATA_TYPE": "nvarchar"
+    },
+    {
+      "COLUMN_NAME": "Year",
+      "DATA_TYPE": "int"
+    },
+    {
+      "COLUMN_NAME": "Genre",
+      "DATA_TYPE": "nvarchar"
+    },
+    {
+      "COLUMN_NAME": "Director",
+      "DATA_TYPE": "nvarchar"
+    },
+    {
+      "COLUMN_NAME": "Cast",
+      "DATA_TYPE": "nvarchar"
+    },
+    {
+      "COLUMN_NAME": "Rating",
+      "DATA_TYPE": "decimal"
+    },
+    {
+      "COLUMN_NAME": "Plot",
+      "DATA_TYPE": "nvarchar"
+    },
+    {
+      "COLUMN_NAME": "PosterURL",
+      "DATA_TYPE": "nvarchar"
+    },
+    {
+      "COLUMN_NAME": "Runtime",
+      "DATA_TYPE": "int"
+    },
+    {
+      "COLUMN_NAME": "Language",
+      "DATA_TYPE": "nvarchar"
+    },
+    {
+      "COLUMN_NAME": "Country",
+      "DATA_TYPE": "nvarchar"
+    },
+    {
+      "COLUMN_NAME": "CreatedAt",
+      "DATA_TYPE": "datetime2"
+    },
+    {
+      "COLUMN_NAME": "UpdatedAt",
+      "DATA_TYPE": "datetime2"
+    },
+    {
+      "COLUMN_NAME": "ViewCount",
+      "DATA_TYPE": "int"
+    }
+  ],
+  "csv_columns": [
+    "Title",
+    "Year",
+    "Duration",
+    "MPA",
+    "Rating",
+    "Votes",
+    "m\u00e9ta_score",
+    "description",
+    "Movie Link",
+    "writers",
+    "directors",
+    "stars",
+    "budget",
+    "opening_weekend_Gross",
+    "grossWorldWWide",
+    "gross_US_Canada",
+    "release_date",
+    "countries_origin",
+    "filming_locations",
+    "production_company",
+    "awards_content",
+    "genres",
+    "Languages"
+  ],
+  "sample": [
+    {
+      "Title": "1. Inside Out 2",
+      "Year": 2024,
+      "Duration": "1h 36m",
+      "MPA": "PG",
+      "Rating": 7.5,
+      "Votes": "212K",
+      "m\u00e9ta_score": 73.0,
+      "description": "A sequel that features Riley entering puberty and experiencing brand new, more complex emotions as a result. As Riley tries to adapt to her teenage years, her old emotions try to adapt to the possibility of being replaced.",
+      "Movie Link": "https://www.imdb.com/title/tt22022452/?ref_=sr_i_1",
+      "writers": "['Meg LeFauve', 'Dave Holstein', 'Kelsey Mann']",
+      "directors": "['Kelsey Mann']",
+      "stars": "['Amy Poehler', 'Maya Hawke', 'Kensington Tallman', 'Liza Lapira', 'Tony Hale', 'Lewis Black', 'Phyllis Smith', 'Ayo Edebiri', 'Lilimar', 'Grace Lu']",
+      "budget": "$200,000,000 (estimated)",
+      "opening_weekend_Gross": "$154,201,673",
+      "grossWorldWWide": "$1,698,863,816",
+      "gross_US_Canada": "$652,980,194",
+      "release_date": "June 14, 2024",
+      "countries_origin": "['United States']",
+      "filming_locations": "['Walt Disney Feature Animation - 500 S. Buena Vista Street, Burbank, California, USA (Studio)']",
+      "production_company": "['Walt Disney Pictures', 'Pixar Animation Studios', 'Hurwitz Creative']",
+      "awards_content": "Nominated for 1 Oscar, 5 wins & 105 nominations total",
+      "genres": "['Coming-of-Age', 'Computer Animation', 'Quest', 'Teen Comedy', 'Teen Drama', 'Adventure', 'Animation', 'Comedy', 'Drama', 'Family']",
+      "Languages": "['English', 'French', 'Spanish']"
+    }
+  ]
+}

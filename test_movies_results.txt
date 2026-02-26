@@ -1,0 +1,8 @@
+============================= test session starts =============================
+platform win32 -- Python 3.11.9, pytest-9.0.2, pluggy-1.6.0 -- C:\Users\vamsh\AppData\Local\Microsoft\WindowsApps\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\python.exe
+cachedir: .pytest_cache
+rootdir: C:\Users\vamsh\OneDrive\Desktop\signup_app
+plugins: anyio-4.9.0, timeout-2.4.0
+collecting ... collected 3 items
+
+test_movies.py::test_api_get_all_movies PASSED                           [ 33%]

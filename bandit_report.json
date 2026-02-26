@@ -1,0 +1,270 @@
+{
+  "errors": [],
+  "generated_at": "2026-02-24T12:54:09Z",
+  "metrics": {
+    ".\\app.py": {
+      "CONFIDENCE.HIGH": 0,
+      "CONFIDENCE.LOW": 0,
+      "CONFIDENCE.MEDIUM": 1,
+      "CONFIDENCE.UNDEFINED": 0,
+      "SEVERITY.HIGH": 0,
+      "SEVERITY.LOW": 0,
+      "SEVERITY.MEDIUM": 1,
+      "SEVERITY.UNDEFINED": 0,
+      "loc": 741,
+      "nosec": 0,
+      "skipped_tests": 0
+    },
+    ".\\db.py": {
+      "CONFIDENCE.HIGH": 5,
+      "CONFIDENCE.LOW": 0,
+      "CONFIDENCE.MEDIUM": 4,
+      "CONFIDENCE.UNDEFINED": 0,
+      "SEVERITY.HIGH": 0,
+      "SEVERITY.LOW": 5,
+      "SEVERITY.MEDIUM": 4,
+      "SEVERITY.UNDEFINED": 0,
+      "loc": 1138,
+      "nosec": 0,
+      "skipped_tests": 0
+    },
+    "_totals": {
+      "CONFIDENCE.HIGH": 5,
+      "CONFIDENCE.LOW": 0,
+      "CONFIDENCE.MEDIUM": 5,
+      "CONFIDENCE.UNDEFINED": 0,
+      "SEVERITY.HIGH": 0,
+      "SEVERITY.LOW": 5,
+      "SEVERITY.MEDIUM": 5,
+      "SEVERITY.UNDEFINED": 0,
+      "loc": 1879,
+      "nosec": 0,
+      "skipped_tests": 0
+    }
+  },
+  "results": [
+    {
+      "code": "1028     socketio.run(app, \n1029                 host='0.0.0.0', \n1030                 port=5000)\n",
+      "col_offset": 21,
+      "end_col_offset": 30,
+      "filename": ".\\app.py",
+      "issue_confidence": "MEDIUM",
+      "issue_cwe": {
+        "id": 605,
+        "link": "https://cwe.mitre.org/data/definitions/605.html"
+      },
+      "issue_severity": "MEDIUM",
+      "issue_text": "Possible binding to all interfaces.",
+      "line_number": 1029,
+      "line_range": [
+        1029
+      ],
+      "more_info": "https://bandit.readthedocs.io/en/1.9.3/plugins/b104_hardcoded_bind_all_interfaces.html",
+      "test_id": "B104",
+      "test_name": "hardcoded_bind_all_interfaces"
+    },
+    {
+      "code": "718                 cursor.execute(\"IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('MoviePlatforms') AND name = 'PriceInfo') ALTER TABLE MoviePlatforms ADD PriceInfo NVARCHAR(100)\")\n719             except:\n720                 pass\n721 \n",
+      "col_offset": 12,
+      "end_col_offset": 20,
+      "filename": ".\\db.py",
+      "issue_confidence": "HIGH",
+      "issue_cwe": {
+        "id": 703,
+        "link": "https://cwe.mitre.org/data/definitions/703.html"
+      },
+      "issue_severity": "LOW",
+      "issue_text": "Try, Except, Pass detected.",
+      "line_number": 719,
+      "line_range": [
+        719,
+        720
+      ],
+      "more_info": "https://bandit.readthedocs.io/en/1.9.3/plugins/b110_try_except_pass.html",
+      "test_id": "B110",
+      "test_name": "try_except_pass"
+    },
+    {
+      "code": "724                 cursor.execute(\"IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Movies') AND name = 'ViewCount') ALTER TABLE Movies ADD ViewCount INT DEFAULT 0\")\n725             except:\n726                 pass\n727             \n",
+      "col_offset": 12,
+      "end_col_offset": 20,
+      "filename": ".\\db.py",
+      "issue_confidence": "HIGH",
+      "issue_cwe": {
+        "id": 703,
+        "link": "https://cwe.mitre.org/data/definitions/703.html"
+      },
+      "issue_severity": "LOW",
+      "issue_text": "Try, Except, Pass detected.",
+      "line_number": 725,
+      "line_range": [
+        725,
+        726
+      ],
+      "more_info": "https://bandit.readthedocs.io/en/1.9.3/plugins/b110_try_except_pass.html",
+      "test_id": "B110",
+      "test_name": "try_except_pass"
+    },
+    {
+      "code": "794                         conn.commit()\n795                     except Exception as ignored:\n796                         pass # Guest creation might fail if table constraints differ\n797 \n",
+      "col_offset": 20,
+      "end_col_offset": 28,
+      "filename": ".\\db.py",
+      "issue_confidence": "HIGH",
+      "issue_cwe": {
+        "id": 703,
+        "link": "https://cwe.mitre.org/data/definitions/703.html"
+      },
+      "issue_severity": "LOW",
+      "issue_text": "Try, Except, Pass detected.",
+      "line_number": 795,
+      "line_range": [
+        795,
+        796
+      ],
+      "more_info": "https://bandit.readthedocs.io/en/1.9.3/plugins/b110_try_except_pass.html",
+      "test_id": "B110",
+      "test_name": "try_except_pass"
+    },
+    {
+      "code": "868             # Get messages with username from Users table (Limited to last 30 days as requested)\n869             cursor.execute(f'''\n870                 SELECT TOP {limit} \n871                     cm.MessageId as id, \n872                     cm.UserEmail as user_email, \n873                     COALESCE(u.FirstName + ' ' + u.LastName, cm.UserEmail) as username,\n874                     cm.Message as message, \n875                     cm.CreatedAt as timestamp\n876                 FROM ChatMessages cm\n877                 LEFT JOIN Users u ON cm.UserEmail = u.Email\n878                 WHERE cm.RoomId = ? \n879                   AND cm.CreatedAt >= DATEADD(day, -30, GETDATE())\n880                 ORDER BY cm.CreatedAt DESC\n881             ''', (room_id,))\n882             \n",
+      "col_offset": 27,
+      "end_col_offset": 15,
+      "filename": ".\\db.py",
+      "issue_confidence": "MEDIUM",
+      "issue_cwe": {
+        "id": 89,
+        "link": "https://cwe.mitre.org/data/definitions/89.html"
+      },
+      "issue_severity": "MEDIUM",
+      "issue_text": "Possible SQL injection vector through string-based query construction.",
+      "line_number": 869,
+      "line_range": [
+        869,
+        870,
+        871,
+        872,
+        873,
+        874,
+        875,
+        876,
+        877,
+        878,
+        879,
+        880,
+        881
+      ],
+      "more_info": "https://bandit.readthedocs.io/en/1.9.3/plugins/b608_hardcoded_sql_expressions.html",
+      "test_id": "B608",
+      "test_name": "hardcoded_sql_expressions"
+    },
+    {
+      "code": "1005         try:\n1006             cursor.execute(f'''\n1007                 SELECT TOP {limit}\n1008                     MessageId as id, SenderEmail as sender_email, ReceiverEmail as receiver_email,\n1009                     Message as message, CreatedAt as timestamp\n1010                 FROM DirectMessages\n1011                 WHERE (SenderEmail = ? AND ReceiverEmail = ?) \n1012                    OR (SenderEmail = ? AND ReceiverEmail = ?)\n1013                 ORDER BY CreatedAt DESC\n1014             ''', (user1_email, user2_email, user2_email, user1_email))\n1015             \n",
+      "col_offset": 27,
+      "end_col_offset": 15,
+      "filename": ".\\db.py",
+      "issue_confidence": "MEDIUM",
+      "issue_cwe": {
+        "id": 89,
+        "link": "https://cwe.mitre.org/data/definitions/89.html"
+      },
+      "issue_severity": "MEDIUM",
+      "issue_text": "Possible SQL injection vector through string-based query construction.",
+      "line_number": 1006,
+      "line_range": [
+        1006,
+        1007,
+        1008,
+        1009,
+        1010,
+        1011,
+        1012,
+        1013,
+        1014
+      ],
+      "more_info": "https://bandit.readthedocs.io/en/1.9.3/plugins/b608_hardcoded_sql_expressions.html",
+      "test_id": "B608",
+      "test_name": "hardcoded_sql_expressions"
+    },
+    {
+      "code": "1184             cursor = conn.cursor()\n1185             cursor.execute(f\"SELECT TOP {limit} * FROM Movies ORDER BY ViewCount DESC, Rating DESC\")\n1186             columns = [column[0] for column in cursor.description]\n",
+      "col_offset": 27,
+      "end_col_offset": 99,
+      "filename": ".\\db.py",
+      "issue_confidence": "MEDIUM",
+      "issue_cwe": {
+        "id": 89,
+        "link": "https://cwe.mitre.org/data/definitions/89.html"
+      },
+      "issue_severity": "MEDIUM",
+      "issue_text": "Possible SQL injection vector through string-based query construction.",
+      "line_number": 1185,
+      "line_range": [
+        1185
+      ],
+      "more_info": "https://bandit.readthedocs.io/en/1.9.3/plugins/b608_hardcoded_sql_expressions.html",
+      "test_id": "B608",
+      "test_name": "hardcoded_sql_expressions"
+    },
+    {
+      "code": "1200             genre = res[0].split(',')[0].strip()\n1201             cursor.execute(f\"SELECT TOP {limit} * FROM Movies WHERE Genre LIKE ? AND MovieID != ? ORDER BY Rating DESC\", ('%' + genre + '%', movie_id))\n1202             columns = [column[0] for column in cursor.description]\n",
+      "col_offset": 27,
+      "end_col_offset": 119,
+      "filename": ".\\db.py",
+      "issue_confidence": "MEDIUM",
+      "issue_cwe": {
+        "id": 89,
+        "link": "https://cwe.mitre.org/data/definitions/89.html"
+      },
+      "issue_severity": "MEDIUM",
+      "issue_text": "Possible SQL injection vector through string-based query construction.",
+      "line_number": 1201,
+      "line_range": [
+        1201
+      ],
+      "more_info": "https://bandit.readthedocs.io/en/1.9.3/plugins/b608_hardcoded_sql_expressions.html",
+      "test_id": "B608",
+      "test_name": "hardcoded_sql_expressions"
+    },
+    {
+      "code": "1214             conn.commit()\n1215         except: pass\n1216         finally: conn.close()\n",
+      "col_offset": 8,
+      "end_col_offset": 20,
+      "filename": ".\\db.py",
+      "issue_confidence": "HIGH",
+      "issue_cwe": {
+        "id": 703,
+        "link": "https://cwe.mitre.org/data/definitions/703.html"
+      },
+      "issue_severity": "LOW",
+      "issue_text": "Try, Except, Pass detected.",
+      "line_number": 1215,
+      "line_range": [
+        1215
+      ],
+      "more_info": "https://bandit.readthedocs.io/en/1.9.3/plugins/b110_try_except_pass.html",
+      "test_id": "B110",
+      "test_name": "try_except_pass"
+    },
+    {
+      "code": "1225             conn.commit()\n1226         except: pass\n1227         finally: conn.close()\n",
+      "col_offset": 8,
+      "end_col_offset": 20,
+      "filename": ".\\db.py",
+      "issue_confidence": "HIGH",
+      "issue_cwe": {
+        "id": 703,
+        "link": "https://cwe.mitre.org/data/definitions/703.html"
+      },
+      "issue_severity": "LOW",
+      "issue_text": "Try, Except, Pass detected.",
+      "line_number": 1226,
+      "line_range": [
+        1226
+      ],
+      "more_info": "https://bandit.readthedocs.io/en/1.9.3/plugins/b110_try_except_pass.html",
+      "test_id": "B110",
+      "test_name": "try_except_pass"
+    }
+  ]
+}

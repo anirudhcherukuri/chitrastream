@@ -1,0 +1,40 @@
+============================================================
+USERS TABLE STRUCTURE
+============================================================
+Column: UserId               Type: int             Length: None       Nullable: NO
+Column: Email                Type: varchar         Length: 255        Nullable: NO
+Column: PasswordHash         Type: varchar         Length: 500        Nullable: NO
+Column: FirstName            Type: varchar         Length: 100        Nullable: YES
+Column: LastName             Type: varchar         Length: 100        Nullable: YES
+Column: MobileNumber         Type: varchar         Length: 20         Nullable: YES
+Column: IsEmailVerified      Type: bit             Length: None       Nullable: NO
+Column: IsActive             Type: bit             Length: None       Nullable: NO
+Column: SignupSource         Type: varchar         Length: 50         Nullable: YES
+Column: SignupIP             Type: varchar         Length: 45         Nullable: YES
+Column: CreatedAt            Type: datetime2       Length: None       Nullable: NO
+Column: UpdatedAt            Type: datetime2       Length: None       Nullable: YES
+Column: DateOfBirth          Type: date            Length: None       Nullable: YES
+Column: Gender               Type: nvarchar        Length: 20         Nullable: YES
+Column: Country              Type: nvarchar        Length: 50         Nullable: YES
+Column: Language             Type: nvarchar        Length: 50         Nullable: YES
+Column: ContentRating        Type: nvarchar        Length: 10         Nullable: YES
+Column: Bio                  Type: nvarchar        Length: 500        Nullable: YES
+Column: FavoriteGenres       Type: nvarchar        Length: 200        Nullable: YES
+Column: LastLogin            Type: datetime2       Length: None       Nullable: YES
+Column: LastLoginSource      Type: nvarchar        Length: 200        Nullable: YES
+Column: LastLoginIP          Type: nvarchar        Length: 50         Nullable: YES
+
+============================================================
+SAMPLE USER DATA (REDACTED PASSWORDS)
+============================================================
+Email: user@example.com, Name: dsdsd V, Created: 2026-01-06 16:28:37.903539
+Email: vamshicheukuri@gmai.com, Name: anirudh cherukuri, Created: 2026-01-06 17:58:57.100397
+Email: test@example.com, Name: Test User, Created: 2026-01-06 18:02:47.251859
+Email: srujancherukuri@gmai.com, Name: srujan cherukuri, Created: 2026-01-06 18:06:29.672590
+Email: vamshicherukuri@gmai.com, Name: adcd bca, Created: 2026-01-09 06:23:29.084188
+Email: koushikpolina@gmail.com, Name: koushik polina, Created: 2026-01-09 06:47:28.625732
+Email: santhoshkumar@gmai.com, Name: santhosh kumar, Created: 2026-01-09 15:13:19.335999
+Email: johndoe@gmai.com, Name: john doe, Created: 2026-01-21 07:47:05.167163
+Email: guest_d9e1eb1c, Name: Guest d9e1eb1c, Created: 2026-02-10 10:28:38.136282
+Email: guest_a240bb60, Name: Guest a240bb60, Created: 2026-02-10 10:53:48.131156
+Email: chizikvakala@gmail.com, Name: diran vakala, Created: 2026-02-24 08:10:07.316702

@@ -1,0 +1,22 @@
+:root {
+  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+  color: #fff;
+  background-color: #000;
+  -webkit-font-smoothing: antialiased;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+  background-color: #000;
+  color: #fff;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+a {
+  text-decoration: none;
+}

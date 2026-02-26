@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: chitrustream-app
+    env: docker
+    plan: free
+    region: ohio
+    envVars:
+      - key: MONGODB_URI
+        placeholder: "mongodb+srv://user:pass@cluster.mongodb.net/dbname"
+      - key: DB_NAME
+        value: "chitrastream"
+      - key: OPENAI_API_KEY
+        type: secret
+      - key: SECRET_KEY
+        generateValue: true
+      - key: PORT
+        value: 5000
