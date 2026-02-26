@@ -14,22 +14,39 @@ class Database:
         self.client = None
         
         try:
-            self.client = pymongo.MongoClient(self.uri, serverSelectionTimeoutMS=10000)
+            # Use connect=False to avoid issues with forked processes in Gunicorn/Eventlet
+            # Use a longer timeout for the initial connection
+            self.client = pymongo.MongoClient(
+                self.uri, 
+                serverSelectionTimeoutMS=15000, 
+                connectTimeoutMS=15000,
+                socketTimeoutMS=15000,
+                connect=False,
+                retryWrites=True
+            )
             self.db = self.client[self.db_name]
-            self.client.admin.command('ping')
-            print(f"[OK] Connected to MongoDB: {self.db_name}")
+            # We don't ping in __init__ to allow lazy connection
+            print(f"[INFO] Database object initialized for: {self.db_name}")
         except Exception as e:
-            print(f"[ERROR] MongoDB connection failed: {e}")
+            print(f"[ERROR] MongoDB initialization failed: {e}")
             self.db = None
 
     def get_collection(self, name):
         if self.db is None:
-            return None
+            # Re-attempt to get db handle if it was None
+            try:
+                if self.client:
+                    self.db = self.client[self.db_name]
+                else:
+                    return None
+            except:
+                return None
         return self.db[name]
 
     def validate_email(self, email):
         if not email:
             return False
+        # Permissive regex
         pattern = r'^[^@\s]+@[^@\s]+\.[^@\s]+$'
         return re.match(pattern, email.strip()) is not None
 
@@ -46,6 +63,9 @@ class Database:
                 from werkzeug.security import check_password_hash
                 return check_password_hash(password_hash, password)
             # Handle bcrypt hashes
+            if not password_hash.startswith('$'):
+                # Might be a raw string or unsupported format
+                return False
             return bcrypt.checkpw(password.encode('utf-8'), password_hash.encode('utf-8'))
         except Exception as e:
             print(f"[DEBUG] Password verification error: {e}")
@@ -81,7 +101,7 @@ class Database:
             
             users = self.get_collection('users')
             if users is None:
-                return False, "Database connection error - please try again"
+                return False, "Database connection error (Collection Unavailable)"
             
             user_data = {
                 'email': email,
@@ -107,17 +127,24 @@ class Database:
             
             users = self.get_collection('users')
             if users is None:
+                print("[ERROR] authenticate_user: Users collection is None")
                 return None
             
+            # Try finding by email
             user = users.find_one({'email': email})
-            if user and self.verify_password(password, user.get('password_hash', '')):
-                first = user.get('first_name', '')
-                last = user.get('last_name', '')
+            
+            # Fallback: if not found by email, try finding by a field that might store username from old DB
+            if not user:
+                user = users.find_one({'username': email})
+            
+            if user and self.verify_password(password, user.get('password_hash', user.get('passwordhash', ''))):
+                first = user.get('first_name', user.get('firstname', ''))
+                last = user.get('last_name', user.get('lastname', ''))
                 username = f"{first} {last}".strip() or user.get('username', email)
                 return {
-                    'id': user['email'],
+                    'id': user.get('email', str(user.get('_id', ''))),
                     'username': username,
-                    'email': user['email']
+                    'email': user.get('email', '')
                 }
             return None
         except Exception as e:
@@ -136,17 +163,25 @@ class Database:
             
             user = users.find_one({'email': email})
             if not user:
+                # also try username fallback here just in case session has username
+                user = users.find_one({'username': email})
+                
+            if not user:
                 return None
             
             created_at = user.get('created_at', datetime.now())
+            email_val = user.get('email', email)
+            first = user.get('first_name', user.get('firstname', ''))
+            last = user.get('last_name', user.get('lastname', ''))
+            
             return {
-                'id': user['email'],
-                'email': user['email'],
-                'username': f"{user.get('first_name', '')} {user.get('last_name', '')}".strip() or email,
-                'firstname': user.get('first_name', ''),
-                'lastname': user.get('last_name', ''),
+                'id': email_val,
+                'email': email_val,
+                'username': f"{first} {last}".strip() or user.get('username', email_val),
+                'firstname': first,
+                'lastname': last,
                 'mobile': user.get('mobile', ''),
-                'full_name': f"{user.get('first_name', '')} {user.get('last_name', '')}".strip() or email,
+                'full_name': f"{first} {last}".strip() or email_val,
                 'member_since': created_at.strftime('%B %d, %Y') if isinstance(created_at, datetime) else str(created_at)
             }
         except Exception as e:
@@ -185,7 +220,7 @@ class Database:
             results = []
             for doc in cursor:
                 doc['id'] = str(doc['_id'])
-                del doc['_id']
+                if '_id' in doc: del doc['_id']
                 results.append(doc)
             return results
         except Exception as e:
@@ -201,7 +236,7 @@ class Database:
             movie = movies.find_one(query)
             if movie:
                 movie['id'] = str(movie['_id'])
-                del movie['_id']
+                if '_id' in movie: del movie['_id']
                 return movie
         except Exception as e:
             print(f"[ERROR] get_movie_details: {e}")
@@ -263,6 +298,7 @@ class Database:
 
     def init_chat_tables(self):
         try:
+            # Re-init client if needed
             users = self.get_collection('users')
             if users is not None:
                 users.create_index('email', unique=True)
@@ -275,20 +311,34 @@ class Database:
             if movies is not None:
                 movies.create_index('title')
             
-            print("[OK] MongoDB indexes initialized.")
+            print("[OK] MongoDB indexes and tables initialized successfully.")
             return True
         except Exception as e:
             print(f"[ERROR] init_chat_tables: {e}")
             return False
 
 
-# Initialize database instance
-db_instance = Database()
+# Initialize database instance once at module level
+try:
+    db_instance = Database()
+except Exception as e:
+    print(f"[CRITICAL] Database Instance Creation Failed: {e}")
+    db_instance = None
 
 # Export functions for app.py compatibility
-def init_db(): return db_instance.init_chat_tables()
-def get_user(email): return db_instance.get_user_profile(email)
+def init_db(): 
+    if db_instance:
+        return db_instance.init_chat_tables()
+    return False
+
+def get_user(email): 
+    if db_instance:
+        return db_instance.get_user_profile(email)
+    return None
+
 def create_user(username, email, password):
+    if not db_instance:
+        return None, "Database unavailable"
     if not username:
         return None, "Username is required"
     parts = username.strip().split()
@@ -297,9 +347,21 @@ def create_user(username, email, password):
     success, msg = db_instance.register_user(email, password, first, last, '', 'Web', '127.0.0.1')
     return (email.strip().lower() if success else None), msg
 
-def verify_user(email, password): return db_instance.authenticate_user(email, password)
-def add_message(email, name, room, msg, time=None): return db_instance.add_message(email, name, room, msg, time)
-def get_room_messages(room, limit=50): return db_instance.get_room_messages(room, limit)
+def verify_user(email, password): 
+    if db_instance:
+        return db_instance.authenticate_user(email, password)
+    return None
+
+def add_message(email, name, room, msg, time=None): 
+    if db_instance:
+        return db_instance.add_message(email, name, room, msg, time)
+    return False
+
+def get_room_messages(room, limit=50): 
+    if db_instance:
+        return db_instance.get_room_messages(room, limit)
+    return []
+
 def get_messages(room): return get_room_messages(room)
 def create_stream(*args, **kwargs): return True
 def get_active_streams(): return []
@@ -308,4 +370,4 @@ def verify_user_email(e): return True
 def save_private_message(*args): return True
 def get_private_messages(*args): return []
 def get_user_conversations(e): return []
-db = db_instance  # Export the instance
+db = db_instance  # Export the instance for health check

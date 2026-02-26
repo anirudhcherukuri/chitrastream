@@ -155,6 +155,22 @@ def api_auth_status():
         })
     return jsonify({'isAuthenticated': False})
 
+@app.route('/api/health')
+def health_check():
+    db_status = "Disconnected"
+    try:
+        if db and db.client:
+            db.client.admin.command('ping')
+            db_status = "Connected"
+    except:
+        pass
+    
+    return jsonify({
+        'status': 'healthy',
+        'database': db_status,
+        'environment': os.environ.get('RENDER', 'local')
+    })
+
 @app.route('/api/profile')
 def api_profile():
     user = get_current_user()
