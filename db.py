@@ -83,7 +83,7 @@ class Database:
     def get_user_profile(self, email):
         users = self.get_collection('users')
         user = users.find_one({'email': email})
-        if not user: return {'email': email, 'full_name': email}
+        if not user: return None
         
         profile = {
             'email': user['email'],
@@ -179,6 +179,7 @@ class Database:
 
 # Initialize database instance
 db_instance = Database()
+db_instance.init_chat_tables() # Initialize on load for production
 
 # Export functions for app.py compatibility
 def init_db(): return db_instance.init_chat_tables()
