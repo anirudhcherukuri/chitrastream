@@ -14,7 +14,7 @@ class Database:
         self.db_name = os.environ.get('DB_NAME', 'chitrastream')
         
         try:
-            self.client = pymongo.MongoClient(self.uri)
+            self.client = pymongo.MongoClient(self.uri, serverSelectionTimeoutMS=5000)
             self.db = self.client[self.db_name]
             # Verify connection
             self.client.admin.command('ping')
@@ -179,7 +179,6 @@ class Database:
 
 # Initialize database instance
 db_instance = Database()
-db_instance.init_chat_tables() # Initialize on load for production
 
 # Export functions for app.py compatibility
 def init_db(): return db_instance.init_chat_tables()

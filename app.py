@@ -1,3 +1,6 @@
+import eventlet
+eventlet.monkey_patch()
+
 from flask import Flask, render_template, request, redirect, url_for, session, jsonify, flash, send_from_directory
 from flask_socketio import SocketIO, emit, join_room, leave_room, disconnect
 from flask_cors import CORS
@@ -34,10 +37,10 @@ app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 # Enable CORS for React frontend
 CORS(app, supports_credentials=True, origins=["http://localhost:3000", "http://localhost:5173"])
 
-# Initialize Socket.IO with threading mode (FIXED)
+# Initialize Socket.IO with eventlet mode (FIXED for Render)
 socketio = SocketIO(app, 
                    cors_allowed_origins="*",
-                   async_mode=None,
+                   async_mode='eventlet',
                    ping_timeout=60,
                    ping_interval=25,
                    logger=True,
