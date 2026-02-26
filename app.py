@@ -37,7 +37,7 @@ CORS(app, supports_credentials=True, origins=["http://localhost:3000", "http://l
 # Initialize Socket.IO with threading mode (FIXED)
 socketio = SocketIO(app, 
                    cors_allowed_origins="*",
-                   async_mode='threading',
+                   async_mode=None,
                    ping_timeout=60,
                    ping_interval=25,
                    logger=True,
