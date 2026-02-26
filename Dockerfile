@@ -17,7 +17,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy frontend code and build it
 COPY frontend/ ./frontend/
-RUN cd frontend && npm install && npm run build
+RUN cd frontend && npm install --legacy-peer-deps && npm run build
 
 # Copy remaining backend code
 COPY . .
