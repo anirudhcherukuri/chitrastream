@@ -96,6 +96,10 @@ def api_signup():
         if not username or not email or not password:
             return jsonify({'success': False, 'message': 'All fields are required!'}), 400
         
+        # Diagnostic check for DB before proceeding
+        if not db or not db.client:
+            return jsonify({'success': False, 'message': 'Database not connected. Please check your Render environment variables.'}), 503
+            
         # Check if user exists
         existing_user = get_user(email=email)
         if existing_user:
@@ -112,7 +116,8 @@ def api_signup():
             return jsonify({'success': False, 'message': msg or 'Error creating account. Try again.'}), 400
     except Exception as e:
         print(f"[ERROR] Signup Exception: {e}")
-        return jsonify({'success': False, 'message': 'Server error during signup.'}), 500
+        # Log specifically if it's a connection timeout
+        return jsonify({'success': False, 'message': f'Server error: {str(e)}' if os.environ.get('DEBUG') else 'Server error during signup. Check database connection.'}), 500
 
 @app.route('/api/auth/login', methods=['POST'])
 def api_login():
@@ -177,9 +182,11 @@ def health_check():
             
     try:
         if db and db.client:
-            # Short timeout for health check
-            db.client.admin.command('ping')
+            # Short timeout to avoid hanging the health check
+            db.client.admin.command('ping', maxTimeMS=2000)
             db_status = "Connected"
+        else:
+            db_status = "Not Initialized (Missing Driver)"
     except Exception as e:
         db_status = f"Error: {str(e)}"
     
