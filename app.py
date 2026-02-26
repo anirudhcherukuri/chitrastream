@@ -158,17 +158,37 @@ def api_auth_status():
 @app.route('/api/health')
 def health_check():
     db_status = "Disconnected"
+    uri_present = False
+    masked_uri = "None"
+    
+    uri = os.environ.get('MONGODB_URI')
+    if uri:
+        uri_present = True
+        # Mask credentials
+        if '@' in uri:
+            prefix = uri.split('@')[0]
+            if ':' in prefix:
+                parts = prefix.split(':')
+                masked_uri = f"{parts[0]}:****@{uri.split('@')[1]}"
+            else:
+                masked_uri = f"****@{uri.split('@')[1]}"
+        else:
+            masked_uri = uri[:15] + "..."
+            
     try:
         if db and db.client:
+            # Short timeout for health check
             db.client.admin.command('ping')
             db_status = "Connected"
-    except:
-        pass
+    except Exception as e:
+        db_status = f"Error: {str(e)}"
     
     return jsonify({
         'status': 'healthy',
         'database': db_status,
-        'environment': os.environ.get('RENDER', 'local')
+        'uri_present': uri_present,
+        'masked_uri': masked_uri,
+        'environment': os.environ.get('RENDER', 'true' if os.environ.get('RENDER') else 'local')
     })
 
 @app.route('/api/profile')
