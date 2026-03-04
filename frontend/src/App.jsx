@@ -24,17 +24,35 @@ function PublicRoute({ children, user, loading }) {
 }
 
 export default function App() {
-  const [user, setUser] = useState(null)
+  const [user, setUser] = useState(() => {
+    try {
+      const saved = localStorage.getItem('chitra_user')
+      return saved ? JSON.parse(saved) : null
+    } catch { return null }
+  })
   const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    // Sync localStorage whenever user state changes
+    if (user) localStorage.setItem('chitra_user', JSON.stringify(user))
+    else localStorage.removeItem('chitra_user')
+  }, [user])
 
   useEffect(() => {
     fetch('/api/auth/status', { credentials: 'include' })
       .then(r => r.json())
       .then(data => {
-        if (data.isAuthenticated) setUser(data.user)
+        if (data.isAuthenticated) {
+          setUser(data.user)
+        } else {
+          setUser(null)
+        }
         setLoading(false)
       })
-      .catch(() => setLoading(false))
+      .catch(() => {
+        // If server is down/cold starting, trust localStorage temporarily but set loading false
+        setLoading(false)
+      })
   }, [])
 
   return (

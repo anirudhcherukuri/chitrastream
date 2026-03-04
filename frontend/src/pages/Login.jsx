@@ -19,23 +19,17 @@ export default function Login({ setUser }) {
         body: JSON.stringify({ email, password }),
       })
       const data = await res.json()
-      console.log('Login response:', data)
+      console.log('Login result:', data)
       if (data.success) {
+        setAlert({ type: 'success', msg: 'Login successful! Redirecting...' })
+        // App.jsx will automatically redirect via PublicRoute once setUser is called
         setUser(data.user)
-        // Tiny delay for state context to update
-        setTimeout(() => {
-          navigate('/dashboard')
-          // Force fallback after 2.5s if routing hangs
-          setTimeout(() => {
-            if (window.location.pathname !== '/dashboard') window.location.href = '/dashboard'
-          }, 2500)
-        }, 100)
       } else {
         setAlert({ type: 'error', msg: data.message || 'Invalid email or password!' })
       }
     } catch (err) {
       console.error('Login error:', err)
-      setAlert({ type: 'error', msg: 'Connection error. Please try again.' })
+      setAlert({ type: 'error', msg: 'Unable to connect to server. Please try again in 10 seconds.' })
     }
   }
 
