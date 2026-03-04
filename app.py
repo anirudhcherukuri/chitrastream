@@ -133,8 +133,13 @@ def api_login():
         if not email or not password:
             return jsonify({'success': False, 'message': 'Email and password required!'}), 400
             
+        # Diagnostic check for DB before proceeding
+        if not db or not getattr(db, 'db', None):
+            error_msg = getattr(db, 'init_error', 'Database not connected. Please check Render environment variables.') if db else 'Database module failed to load.'
+            return jsonify({'success': False, 'message': f'DB Error: {error_msg}'}), 503
+            
         user = verify_user(email, password)
-        if user:
+        if user and not isinstance(user, dict) or (isinstance(user, dict) and 'error' not in user):
             user_payload = {
                 'id': user.get('id') or user.get('email') or email,
                 'username': user.get('username') or 'User',
@@ -146,8 +151,9 @@ def api_login():
             print(f"[DEBUG] Login successful: {email} -> Payload: {user_payload}")
             return jsonify({'success': True, 'user': user_payload})
         else:
-            print(f"[DEBUG] Login failed: {email} - Credentials mismatch")
-            return jsonify({'success': False, 'message': 'Invalid email or password!'}), 401
+            error_msg = user.get('error', 'Invalid email or password!') if isinstance(user, dict) else 'Invalid email or password!'
+            print(f"[DEBUG] Login failed: {email} - {error_msg}")
+            return jsonify({'success': False, 'message': error_msg}), 401
     except Exception as e:
         print(f"[ERROR] Login Exception: {e}")
         return jsonify({'success': False, 'message': 'Server error during login.'}), 500

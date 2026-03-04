@@ -46,6 +46,7 @@ class Database:
                         print("[ERROR] No Firebase credentials found!")
                         print("  Set FIREBASE_CREDENTIALS env var (JSON string)")
                         print("  Or place firebase-credentials.json in project root")
+                        self.init_error = "No FIREBASE_CREDENTIALS in env variables."
                         self.db = None
                         return
                 
@@ -56,6 +57,7 @@ class Database:
             
         except Exception as e:
             print(f"[ERROR] Firebase initialization failed: {e}")
+            self.init_error = str(e)
             self.db = None
 
     def get_collection(self, name):
@@ -134,7 +136,8 @@ class Database:
         
         if not self.db: 
             print("ERROR: Database not initialized in authenticate_user")
-            return None
+            error_msg = getattr(self, 'init_error', 'Database not connected.')
+            return {'error': f"DB Init Failed: {error_msg}"}
         try:
             print(f"DEBUG: Starting authentication for {email}")
             user = self.get_user_profile(email)
@@ -153,12 +156,14 @@ class Database:
                     return user_data
                 else:
                     print(f"DEBUG: Password verification failed for {email}")
-            return None
+                    return {'error': 'Invalid email or password!'}
+            return {'error': 'User not found or Invalid email or password!'}
         except Exception as e:
             print(f"[ERROR] authenticate_user: {e}")
             if "RESOURCE_EXHAUSTED" in str(e):
                 print("[CRITICAL] Firestore Quota Exhausted!")
-            return None
+                return {'error': 'Firestore Quota Exhausted! Try again tomorrow.'}
+            return {'error': str(e)}
 
     def get_user_profile(self, email):
         if not self.db: 
