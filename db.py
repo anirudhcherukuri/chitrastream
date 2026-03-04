@@ -162,6 +162,7 @@ class Database:
             return {
                 'id': email,
                 'email': user.get('email', email),
+                'username': full_name or email,
                 'full_name': full_name or email,
                 'first_name': user.get('first_name', ''),
                 'last_name': user.get('last_name', ''),
@@ -301,12 +302,22 @@ class Database:
             messages = self.get_collection('chat_messages')
             if messages is None:
                 return False
+            
+            # Ensure timestamp is a Datetime object for proper sorting
+            if isinstance(timestamp, str):
+                try:
+                    ts_obj = datetime.fromisoformat(timestamp.replace('Z', '+00:00'))
+                except:
+                    ts_obj = datetime.now()
+            else:
+                ts_obj = timestamp or datetime.now()
+
             msg_data = {
                 'user_email': user_email,
                 'username': username,
                 'room': room.lower() if isinstance(room, str) else room,
                 'message': message,
-                'timestamp': timestamp or datetime.now()
+                'timestamp': ts_obj
             }
             messages.add(msg_data)
             return True
@@ -320,12 +331,15 @@ class Database:
             if messages is None:
                 return []
             room_query = room.lower() if isinstance(room, str) else room
-            docs = messages.where('room', '==', room_query).order_by('timestamp').limit(limit).get()
+            # Get latest 50 messages (DESC)
+            docs = messages.where('room', '==', room_query).order_by('timestamp', direction=firestore.Query.DESCENDING).limit(limit).get()
+            
             results = []
             for doc in docs:
                 data = doc.to_dict()
                 ts = data.get('timestamp', datetime.now())
                 if hasattr(ts, 'isoformat'):
+                    # Convert to ISO string for JSON serialization
                     ts = ts.isoformat()
                 results.append({
                     'id': doc.id,
@@ -334,6 +348,9 @@ class Database:
                     'message': data.get('message', ''),
                     'timestamp': str(ts)
                 })
+            
+            # Reverse results to be in chronological order for the chat UI
+            results.reverse()
             return results
         except Exception as e:
             print(f"[ERROR] get_room_messages: {e}")
