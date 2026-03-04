@@ -98,6 +98,70 @@ const MODAL_STYLES = `
   .modal-content::-webkit-scrollbar-thumb { background: rgba(244,163,0,0.3); border-radius: 4px; }
   .modal-content::-webkit-scrollbar-thumb:hover { background: rgba(244,163,0,0.6); }
   
+  /* Premium Review Styles */
+  .review-card {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 20px;
+    transition: all 0.3s ease;
+  }
+  .review-card:hover {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(244, 163, 0, 0.2);
+    transform: translateY(-2px);
+  }
+  .review-user-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+  }
+  .review-user-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .review-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #f4a300, #ff8c00);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    color: #000;
+    font-size: 14px;
+  }
+  .review-username {
+    font-weight: 700;
+    color: #fff;
+    font-size: 15px;
+  }
+  .review-rating-pill {
+    background: rgba(244, 163, 0, 0.1);
+    color: #f4a300;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 800;
+    border: 1px solid rgba(244, 163, 0, 0.2);
+  }
+  .review-text {
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 14.5px;
+    line-height: 1.6;
+    margin-bottom: 12px;
+  }
+  .review-date {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.3);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
   @keyframes scaleUp { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
 `
 
@@ -271,31 +335,49 @@ export default function MovieModal({ movieId, onClose, user }) {
                       onClick={submitReview}
                       disabled={submitting}
                       style={{
-                        background: '#f4a300', color: '#000', border: 'none', padding: '8px 20px', borderRadius: '4px',
-                        fontWeight: 'bold', cursor: 'pointer', opacity: submitting ? 0.5 : 1
+                        background: '#f4a300', color: '#000', border: 'none', padding: '12px 30px', borderRadius: '8px',
+                        fontWeight: '800', cursor: 'pointer', opacity: submitting ? 0.5 : 1, transition: '0.3s',
+                        boxShadow: '0 4px 15px rgba(244,163,0,0.3)', textTransform: 'uppercase', letterSpacing: '1px'
                       }}
+                      onMouseOver={(e) => e.target.style.transform = 'translateY(-2px)'}
+                      onMouseOut={(e) => e.target.style.transform = 'translateY(0)'}
                     >
                       {submitting ? 'Submitting...' : 'Post Review'}
                     </button>
                   </div>
 
+                  <div style={{ height: '1px', background: 'linear-gradient(90deg, transparent, rgba(244,163,0,0.3), transparent)', margin: '40px 0' }}></div>
+
                   {/* Reviews List */}
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '25px' }}>
+                      <h4 style={{ color: '#fff', fontSize: '20px', fontWeight: '800', letterSpacing: '0.5px' }}>Recent Community Reviews</h4>
+                      <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: '13px' }}>{movie.reviews?.length || 0} Reviews</span>
+                    </div>
+
                     {movie.reviews && movie.reviews.length > 0 ? (
                       movie.reviews.map((rev, i) => (
-                        <div key={i} style={{ padding: '15px', background: 'rgba(255,255,255,0.03)', borderRadius: '8px' }}>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
-                            <strong style={{ color: '#f4a300' }}>{rev.Username || 'User'}</strong>
-                            <span style={{ color: '#f4a300' }}>⭐ {rev.Rating}/10</span>
+                        <div key={rev.id || i} className="review-card">
+                          <div className="review-user-row">
+                            <div className="review-user-info">
+                              <div className="review-avatar">
+                                {(rev.Username || 'U').charAt(0).toUpperCase()}
+                              </div>
+                              <div className="review-username">{rev.Username || 'Anonymous'}</div>
+                            </div>
+                            <div className="review-rating-pill">⭐ {rev.Rating}/10</div>
                           </div>
-                          <p style={{ color: 'rgba(255,255,255,0.8)', fontSize: '14px', lineHeight: '1.5' }}>{rev.ReviewText}</p>
-                          <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.3)', marginTop: '10px' }}>
-                            {new Date(rev.CreatedAt).toLocaleDateString()}
+                          <p className="review-text">{rev.ReviewText}</p>
+                          <div className="review-date">
+                            {new Date(rev.CreatedAt).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}
                           </div>
                         </div>
                       ))
                     ) : (
-                      <div style={{ textAlign: 'center', color: 'rgba(255,255,255,0.4)', padding: '40px' }}>No reviews yet. Be the first to review!</div>
+                      <div style={{ textAlign: 'center', color: 'rgba(255,255,255,0.4)', padding: '60px', background: 'rgba(255,255,255,0.02)', borderRadius: '12px' }}>
+                        <div style={{ fontSize: '40px', marginBottom: '15px' }}>💬</div>
+                        <div style={{ fontWeight: '600' }}>No reviews yet. Be the first to share your thoughts!</div>
+                      </div>
                     )}
                   </div>
                 </div>
