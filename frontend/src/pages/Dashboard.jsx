@@ -275,53 +275,56 @@ export default function Dashboard({ user, setUser }) {
     navigate('/login')
   }
 
-  const allGenres = ['All', ...new Set(allMovies.flatMap(m => (m.genre || m.Genre || '').split(',').map(g => g.trim())))].sort()
+  const allGenres = useMemo(() =>
+    ['All', ...new Set(allMovies.flatMap(m => (m.genre || m.Genre || '').split(',').map(g => g.trim())))].sort()
+    , [allMovies])
 
-  const filteredMovies = allMovies.filter(m => {
-    const title = (m.title || m.Title || '').toLowerCase()
-    const genre = (m.genre || m.Genre || '').toLowerCase()
-    const rating = parseFloat(m.rating || m.Rating || 0)
-    const yearYear = parseInt(m.year || m.Year || 0)
+  const filteredMovies = useMemo(() => {
+    return allMovies.filter(m => {
+      const title = (m.title || m.Title || '').toLowerCase()
+      const genre = (m.genre || m.Genre || '').toLowerCase()
+      const rating = parseFloat(m.rating || m.Rating || 0)
+      const yearYear = parseInt(m.year || m.Year || 0)
 
-    const searchTerms = search.toLowerCase().split(' ')
-    const matchesSearch = !search || searchTerms.every(term =>
-      title.includes(term) || genre.includes(term) || yearYear.toString().includes(term)
-    )
+      const searchTerms = search.toLowerCase().split(' ')
+      const matchesSearch = !search || searchTerms.every(term =>
+        title.includes(term) || genre.includes(term) || yearYear.toString().includes(term)
+      )
 
-    const matchesGenre = filters.genre === 'All' || genre.includes(filters.genre.toLowerCase())
-    const matchesRating = rating >= filters.rating
-    const matchesYear = filters.year === 'All'
-      || (filters.year === '2020+' && yearYear >= 2020)
-      || (filters.year === '2010s' && yearYear >= 2010 && yearYear < 2020)
-      || (filters.year === 'Pre-2010' && yearYear < 2010)
+      const matchesGenre = filters.genre === 'All' || genre.includes(filters.genre.toLowerCase())
+      const matchesRating = rating >= filters.rating
+      const matchesYear = filters.year === 'All'
+        || (filters.year === '2020+' && yearYear >= 2020)
+        || (filters.year === '2010s' && yearYear >= 2010 && yearYear < 2020)
+        || (filters.year === 'Pre-2010' && yearYear < 2010)
 
-    return matchesSearch && matchesGenre && matchesRating && matchesYear
-  })
+      return matchesSearch && matchesGenre && matchesRating && matchesYear
+    })
+  }, [allMovies, search, filters])
 
-  // Grouping rows properly
+  // Grouping rows properly - Memoized to only re-run when allMovies, trending, or watchlist change
+  const movieRows = useMemo(() => {
+    if (search.length >= 2 || filters.genre !== 'All' || filters.rating > 0 || filters.year !== 'All') return []
+
+    const trendingMovies = trending.length > 0 ? trending : allMovies.slice(0, 10);
+    const criticallyAcclaimed = [...allMovies]
+      .filter(m => !trendingMovies.find(t => (t.id || t.MovieID) === (m.id || m.MovieID)))
+      .sort((a, b) => (b.rating || b.Rating) - (a.rating || a.Rating))
+      .slice(0, 15);
+
+    return [
+      { title: 'Trending Now', movies: trendingMovies },
+      { title: 'Critically Acclaimed', movies: criticallyAcclaimed },
+      { title: 'Action & Adventure', movies: allMovies.filter(m => (m.genre || m.Genre || '').toLowerCase().includes('action')).slice(0, 15) },
+      { title: 'Comedies', movies: allMovies.filter(m => (m.genre || m.Genre || '').toLowerCase().includes('comedy')).slice(0, 15) },
+      { title: 'Sci-Fi & Fantasy', movies: allMovies.filter(m => (m.genre || m.Genre || '').toLowerCase().match(/sci-fi|fantasy/)).slice(0, 15) },
+      { title: 'Thrillers', movies: allMovies.filter(m => (m.genre || m.Genre || '').toLowerCase().includes('thriller')).slice(0, 15) },
+      { title: 'Dramas', movies: allMovies.filter(m => (m.genre || m.Genre || '').toLowerCase().includes('drama')).slice(0, 15) },
+      { title: 'Romance', movies: allMovies.filter(m => (m.genre || m.Genre || '').toLowerCase().includes('romance')).slice(0, 15) },
+    ]
+  }, [allMovies, trending, filters, search])
+
   const isActivelyFiltering = search.length >= 2 || filters.genre !== 'All' || filters.rating > 0 || filters.year !== 'All'
-
-  const trendingMovies = trending.length > 0 ? trending : allMovies.slice(0, 10);
-  const criticallyAcclaimed = [...allMovies]
-    .filter(m => !trendingMovies.find(t => (t.id || t.MovieID) === (m.id || m.MovieID)))
-    .sort((a, b) => (b.rating || b.Rating) - (a.rating || a.Rating))
-    .slice(0, 15);
-
-  const movieRows = [
-    { title: 'Trending Now', movies: trendingMovies },
-    { title: 'Critically Acclaimed', movies: criticallyAcclaimed },
-    { title: 'Action & Adventure', movies: allMovies.filter(m => (m.genre || m.Genre || '').toLowerCase().includes('action')).slice(0, 15) },
-    { title: 'Comedies', movies: allMovies.filter(m => (m.genre || m.Genre || '').toLowerCase().includes('comedy')).slice(0, 15) },
-    { title: 'Sci-Fi & Fantasy', movies: allMovies.filter(m => (m.genre || m.Genre || '').toLowerCase().match(/sci-fi|fantasy/)).slice(0, 15) },
-    { title: 'Thrillers', movies: allMovies.filter(m => (m.genre || m.Genre || '').toLowerCase().includes('thriller')).slice(0, 15) },
-    { title: 'Dramas', movies: allMovies.filter(m => (m.genre || m.Genre || '').toLowerCase().includes('drama')).slice(0, 15) },
-    { title: 'Romance', movies: allMovies.filter(m => (m.genre || m.Genre || '').toLowerCase().includes('romance')).slice(0, 15) },
-    { title: 'Horror', movies: allMovies.filter(m => (m.genre || m.Genre || '').toLowerCase().includes('horror')).slice(0, 15) },
-    { title: 'Documentaries', movies: allMovies.filter(m => (m.genre || m.Genre || '').toLowerCase().includes('documentary')).slice(0, 15) },
-    { title: 'Animation', movies: allMovies.filter(m => (m.genre || m.Genre || '').toLowerCase().includes('animation')).slice(0, 15) },
-    { title: 'Family', movies: allMovies.filter(m => (m.genre || m.Genre || '').toLowerCase().includes('family')).slice(0, 15) },
-    { title: 'Crime Studios', movies: allMovies.filter(m => (m.genre || m.Genre || '').toLowerCase().includes('crime')).slice(0, 15) },
-  ]
 
   let heroBgUrl = hero ? (hero.poster || hero.PosterURL) : ''
   if (!heroBgUrl || heroBgUrl.includes('dummyimage.com') || heroBgUrl.includes('placehold') || heroBgUrl.includes('placeholder')) {

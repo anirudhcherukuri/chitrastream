@@ -106,6 +106,9 @@ export default function MovieModal({ movieId, onClose, user }) {
   const [loading, setLoading] = useState(true)
   const [inWatchlist, setInWatchlist] = useState(false)
   const [activeTab, setActiveTab] = useState('more')
+  const [submitting, setSubmitting] = useState(false)
+  const [reviewText, setReviewText] = useState('')
+  const [reviewRating, setReviewRating] = useState(10)
 
   const fetchMovie = async () => {
     try {
@@ -116,6 +119,28 @@ export default function MovieModal({ movieId, onClose, user }) {
       setLoading(false)
     } catch (err) {
       setLoading(false)
+    }
+  }
+
+  const submitReview = async () => {
+    if (!reviewText.trim()) return
+    setSubmitting(true)
+    try {
+      const r = await fetch(`/api/movies/${movieId}/reviews`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ rating: reviewRating, review_text: reviewText }),
+        credentials: 'include'
+      })
+      const res = await r.json()
+      if (res.success) {
+        setReviewText('')
+        fetchMovie() // Refresh to show new review and update score
+      }
+    } catch (err) {
+      console.error(err)
+    } finally {
+      setSubmitting(false)
     }
   }
 
@@ -195,6 +220,7 @@ export default function MovieModal({ movieId, onClose, user }) {
 
             <div className="netflix-tabs">
               <button className={`n-tab ${activeTab === 'more' ? 'active' : ''}`} onClick={() => setActiveTab('more')}>More Like This</button>
+              <button className={`n-tab ${activeTab === 'reviews' ? 'active' : ''}`} onClick={() => setActiveTab('reviews')}>Reviews</button>
               <button className={`n-tab ${activeTab === 'trailers' ? 'active' : ''}`} onClick={() => setActiveTab('trailers')}>Watch Options</button>
             </div>
 
@@ -213,15 +239,77 @@ export default function MovieModal({ movieId, onClose, user }) {
                   })}
                 </div>
               )}
+
+              {activeTab === 'reviews' && (
+                <div style={{ color: '#fff' }}>
+                  {/* Review Form */}
+                  <div style={{ background: 'rgba(244,163,0,0.05)', padding: '20px', borderRadius: '8px', marginBottom: '30px', border: '1px solid rgba(244,163,0,0.2)' }}>
+                    <h4 style={{ marginBottom: '15px', color: '#f4a300' }}>Write a Review</h4>
+                    <div style={{ display: 'flex', gap: '10px', marginBottom: '15px' }}>
+                      {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(num => (
+                        <button
+                          key={num}
+                          onClick={() => setReviewRating(num)}
+                          style={{
+                            background: reviewRating >= num ? '#f4a300' : 'rgba(255,255,255,0.1)',
+                            border: 'none', color: reviewRating >= num ? '#000' : '#fff',
+                            width: '30px', height: '30px', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold'
+                          }}
+                        >{num}</button>
+                      ))}
+                    </div>
+                    <textarea
+                      placeholder="Share your thoughts on this movie..."
+                      value={reviewText}
+                      onChange={(e) => setReviewText(e.target.value)}
+                      style={{
+                        width: '100%', height: '80px', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)',
+                        borderRadius: '4px', color: '#fff', padding: '10px', marginBottom: '10px', outline: 'none'
+                      }}
+                    />
+                    <button
+                      onClick={submitReview}
+                      disabled={submitting}
+                      style={{
+                        background: '#f4a300', color: '#000', border: 'none', padding: '8px 20px', borderRadius: '4px',
+                        fontWeight: 'bold', cursor: 'pointer', opacity: submitting ? 0.5 : 1
+                      }}
+                    >
+                      {submitting ? 'Submitting...' : 'Post Review'}
+                    </button>
+                  </div>
+
+                  {/* Reviews List */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+                    {movie.reviews && movie.reviews.length > 0 ? (
+                      movie.reviews.map((rev, i) => (
+                        <div key={i} style={{ padding: '15px', background: 'rgba(255,255,255,0.03)', borderRadius: '8px' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
+                            <strong style={{ color: '#f4a300' }}>{rev.Username || 'User'}</strong>
+                            <span style={{ color: '#f4a300' }}>⭐ {rev.Rating}/10</span>
+                          </div>
+                          <p style={{ color: 'rgba(255,255,255,0.8)', fontSize: '14px', lineHeight: '1.5' }}>{rev.ReviewText}</p>
+                          <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.3)', marginTop: '10px' }}>
+                            {new Date(rev.CreatedAt).toLocaleDateString()}
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <div style={{ textAlign: 'center', color: 'rgba(255,255,255,0.4)', padding: '40px' }}>No reviews yet. Be the first to review!</div>
+                    )}
+                  </div>
+                </div>
+              )}
+
               {activeTab === 'trailers' && (
                 <div>
-                  <h3 style={{ marginBottom: '15px', color: '#f4a300' }}>Available on out partner platforms:</h3>
+                  <h3 style={{ marginBottom: '15px', color: '#f4a300' }}>Available on our partner platforms:</h3>
                   {movie.platforms?.map((plat, i) => (
                     <div key={i} className="stream-card">
                       <div>
                         <strong style={{ color: '#fff' }}>{plat.name}</strong> <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: '12px', marginLeft: '10px' }}>{plat.price}</span>
                       </div>
-                      <a href={plat.url} target="_blank" rel="noreferrer" className="stream-link">Watch</a>
+                      <a href={plat.url} target="_blank" rel="noreferrer" className="stream-link">Watch Now</a>
                     </div>
                   ))}
                 </div>
@@ -236,8 +324,14 @@ export default function MovieModal({ movieId, onClose, user }) {
             <div className="modal-info-col" style={{ marginBottom: '15px' }}>
               Genres: <span>{movie.genre || movie.Genre}</span>
             </div>
-            <div className="modal-info-col">
+            <div className="modal-info-col" style={{ marginBottom: '25px' }}>
               Director: <span>{movie.director || movie.Director}</span>
+            </div>
+
+            <div style={{ background: 'rgba(244,163,0,0.1)', padding: '15px', borderRadius: '8px', border: '1px solid rgba(244,163,0,0.3)' }}>
+              <h5 style={{ color: '#f4a300', marginBottom: '5px', textTransform: 'uppercase', fontSize: '11px' }}>ChitraStream Score</h5>
+              <div style={{ fontSize: '28px', fontWeight: '900', color: '#fff' }}>{movie.worth_score}%</div>
+              <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.6)' }}>Based on critics & audience</div>
             </div>
           </div>
         </div >

@@ -271,13 +271,25 @@ def current_user():
 def get_movies():
     print(f"DEBUG: Fetching movies for user: {session.get('user_id') or session.get('guest_id')}")
     try:
-        # Only fetch 500 movies for speed (Dashboard only uses ~200 anyway)
-        movies = db.get_all_movies(limit=500)
+        # Increased limit for variety, but optimized front-end will handle the lag
+        movies = db.get_all_movies(limit=2000)
         print(f"DEBUG: Found {len(movies)} movies")
         return jsonify(movies)
     except Exception as e:
         print(f"ERROR fetching movies: {e}")
         return jsonify([]), 500
+
+@app.route('/api/movies/<int:movie_id>/reviews', methods=['POST'])
+@login_required
+def api_add_review(movie_id):
+    user = get_current_user()
+    data = request.json
+    rating = data.get('rating', 0)
+    review_text = data.get('review_text', '')
+    
+    from db import add_review
+    success = add_review(user['email'], user['username'], movie_id, rating, review_text)
+    return jsonify({'success': success})
 
 @app.route('/api/movies/<int:movie_id>')
 @login_required
