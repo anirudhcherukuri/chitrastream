@@ -97,8 +97,16 @@ export default function MovieDetails({ user }) {
         e.target.src = 'https://via.placeholder.com/300x450/111/f4a300?text=ChitraStream'
     }
 
-    const upscalePoster = (url) => {
+    const upscalePoster = (url, size = 'w500') => {
         if (!url) return ''
+
+        // Handle TMDB images
+        if (url.includes('image.tmdb.org')) {
+            // Replace size path if different
+            return url.replace(/\/t\/p\/[^\/]+/, `/t/p/${size}`)
+        }
+
+        // Handle Amazon/IMDb images
         if (url.includes('ia.media-amazon.com') || url.includes('m.media-amazon.com')) {
             if (url.includes('@._V1_')) {
                 return url.split('@._V1_')[0] + '@._V1_.jpg'

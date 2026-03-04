@@ -229,6 +229,40 @@ class Database:
         """Legacy compatibility stub"""
         return None
 
+    def _normalize_movie(self, movie_dict, doc_id):
+        if not movie_dict:
+            return None
+        # Ensure ID always exists
+        movie_dict['id'] = str(doc_id)
+        
+        # Normalize fields for frontend (lowercase from migration to casing expected by app)
+        if 'title' in movie_dict and 'Title' not in movie_dict:
+            movie_dict['Title'] = movie_dict['title']
+        if 'year' in movie_dict and 'Year' not in movie_dict:
+            movie_dict['Year'] = movie_dict['year']
+        if 'plot' in movie_dict and 'Plot' not in movie_dict:
+            movie_dict['Plot'] = movie_dict['plot']
+        if 'genre' in movie_dict and 'Genre' not in movie_dict:
+            movie_dict['Genre'] = movie_dict['genre']
+        if 'director' in movie_dict and 'Director' not in movie_dict:
+            movie_dict['Director'] = movie_dict['director']
+        if 'cast' in movie_dict and 'Cast' not in movie_dict:
+            movie_dict['Cast'] = movie_dict['cast']
+        if 'rating' in movie_dict and 'Rating' not in movie_dict:
+            movie_dict['Rating'] = movie_dict['rating']
+        
+        # Consistent IDs
+        movie_dict['MovieID'] = str(doc_id)
+        movie_dict['id'] = str(doc_id)
+
+        # Poster logic
+        p = movie_dict.get('poster') or movie_dict.get('PosterURL') or movie_dict.get('posterurl')
+        if p:
+            movie_dict['PosterURL'] = p
+            movie_dict['poster'] = p
+        
+        return movie_dict
+
     # ==================== Movies ====================
     
     def get_all_movies(self, limit=100, offset=0):
@@ -239,9 +273,9 @@ class Database:
             docs = movies.limit(limit).offset(offset).get()
             results = []
             for doc in docs:
-                movie = doc.to_dict()
-                movie['id'] = doc.id
-                results.append(movie)
+                movie = self._normalize_movie(doc.to_dict(), doc.id)
+                if movie:
+                    results.append(movie)
             return results
         except Exception as e:
             print(f"[ERROR] get_all_movies: {e}")
@@ -254,9 +288,7 @@ class Database:
                 return None
             doc = movies.document(str(movie_id)).get()
             if doc.exists:
-                movie = doc.to_dict()
-                movie['id'] = doc.id
-                return movie
+                return self._normalize_movie(doc.to_dict(), doc.id)
             return None
         except Exception as e:
             print(f"[ERROR] get_movie_details: {e}")
@@ -401,9 +433,9 @@ def get_user_watchlist(email):
             if movie_id and movies_col:
                 movie_doc = movies_col.document(str(movie_id)).get()
                 if movie_doc.exists:
-                    movie = movie_doc.to_dict()
-                    movie['id'] = movie_doc.id
-                    results.append(movie)
+                    movie = db_instance._normalize_movie(movie_doc.to_dict(), movie_doc.id)
+                    if movie:
+                        results.append(movie)
         return results
     except Exception as e:
         print(f"[ERROR] get_user_watchlist: {e}")
@@ -448,8 +480,14 @@ def increment_view_count(movie_id):
         doc_ref = movies.document(str(movie_id))
         doc = doc_ref.get()
         if doc.exists:
-            current = doc.to_dict().get('view_count', 0)
-            doc_ref.update({'view_count': current + 1})
+            data = doc.to_dict()
+            # Handle possible field name variations
+            current = data.get('view_count') or data.get('viewcount') or 0
+            if not isinstance(current, (int, float)): current = 0
+            doc_ref.update({
+                'view_count': int(current) + 1,
+                'viewcount': int(current) + 1 # sync both for safety
+            })
     except Exception as e:
         print(f"[ERROR] increment_view_count: {e}")
 
@@ -540,9 +578,9 @@ def get_recommendations(movie_id):
         results = []
         for doc in docs:
             if doc.id != str(movie_id):
-                movie = doc.to_dict()
-                movie['id'] = doc.id
-                results.append(movie)
+                movie = db_instance._normalize_movie(doc.to_dict(), doc.id)
+                if movie:
+                    results.append(movie)
         return results
     except Exception as e:
         print(f"[ERROR] get_recommendations: {e}")
@@ -558,9 +596,9 @@ def get_trending_movies():
         docs = movies.order_by('view_count', direction=firestore.Query.DESCENDING).limit(15).get()
         results = []
         for doc in docs:
-            movie = doc.to_dict()
-            movie['id'] = doc.id
-            results.append(movie)
+            movie = db_instance._normalize_movie(doc.to_dict(), doc.id)
+            if movie:
+                results.append(movie)
         return results
     except Exception as e:
         print(f"[ERROR] get_trending_movies: {e}")

@@ -150,11 +150,22 @@ export default function MovieModal({ movieId, onClose, user }) {
   )
   if (!movie) return null
 
-  // Helper for high-res background
-  let bgUrl = movie.poster || movie.PosterURL
-  if (bgUrl && (bgUrl.includes('amazon.com'))) {
-    bgUrl = bgUrl.split('@._V1_')[0] + '@._V1_.jpg'
+  const upscalePoster = (url, size = 'w500') => {
+    if (!url) return ''
+    if (url.includes('image.tmdb.org')) {
+      return url.replace(/\/t\/p\/[^\/]+/, `/t/p/${size}`)
+    }
+    if (url.includes('amazon.com') || url.includes('media-amazon.com')) {
+      if (url.includes('@._V1_')) {
+        return url.split('@._V1_')[0] + '@._V1_.jpg'
+      }
+      return url.replace(/UX\d+/, 'UX600').replace(/SX\d+/, 'SX600').replace(/UY\d+/, 'UY900').replace(/SY\d+/, 'SY900')
+    }
+    return url
   }
+
+  // Helper for high-res background
+  let bgUrl = upscalePoster(movie.poster || movie.PosterURL, 'original')
 
   return (
     <div className="modal-overlay" onClick={onClose}>
@@ -191,8 +202,7 @@ export default function MovieModal({ movieId, onClose, user }) {
               {activeTab === 'more' && (
                 <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap' }}>
                   {movie.recommendations?.map((m, i) => {
-                    let recUrl = m.PosterURL || ''
-                    if (recUrl.includes('amazon.com')) recUrl = recUrl.split('@._V1_')[0] + '@._V1_.jpg'
+                    let recUrl = upscalePoster(m.PosterURL || m.poster)
 
                     return (
                       <div key={i} style={{ width: '150px', background: 'rgba(255,255,255,0.05)', borderRadius: '8px', overflow: 'hidden', border: '1px solid rgba(244,163,0,0.1)' }}>

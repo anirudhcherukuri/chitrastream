@@ -12,8 +12,16 @@ const generatePlaceholder = (title) => {
   return `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="300" height="450" viewBox="0 0 300 450"><rect width="300" height="450" fill="%231a1a1a" /><text x="50%" y="50%" fill="%23f4a300" font-family="sans-serif" font-size="26" font-weight="bold" text-anchor="middle" dominant-baseline="middle">${safeTitle}</text></svg>`
 }
 
-const upscalePoster = (url) => {
+const upscalePoster = (url, size = 'w500') => {
   if (!url) return ''
+
+  // Handle TMDB images
+  if (url.includes('image.tmdb.org')) {
+    // Replace size path if different
+    return url.replace(/\/t\/p\/[^\/]+/, `/t/p/${size}`)
+  }
+
+  // Handle Amazon/IMDb images
   if (url.includes('ia.media-amazon.com') || url.includes('m.media-amazon.com')) {
     if (url.includes('@._V1_')) {
       return url.split('@._V1_')[0] + '@._V1_.jpg'
