@@ -22,13 +22,20 @@ export default function Login({ setUser }) {
       console.log('Login response:', data)
       if (data.success) {
         setUser(data.user)
-        navigate('/dashboard')
+        // Tiny delay for state context to update
+        setTimeout(() => {
+          navigate('/dashboard')
+          // Force fallback after 2.5s if routing hangs
+          setTimeout(() => {
+            if (window.location.pathname !== '/dashboard') window.location.href = '/dashboard'
+          }, 2500)
+        }, 100)
       } else {
         setAlert({ type: 'error', msg: data.message || 'Invalid email or password!' })
       }
     } catch (err) {
       console.error('Login error:', err)
-      setAlert({ type: 'error', msg: 'Something went wrong. Please try again.' })
+      setAlert({ type: 'error', msg: 'Connection error. Please try again.' })
     }
   }
 
@@ -55,9 +62,10 @@ export default function Login({ setUser }) {
           content: '';
           position: fixed;
           top: 0; left: 0; right: 0; bottom: 0;
-          background: radial-gradient(circle at 30% 40%, rgba(244,163,0,0.2) 0%, transparent 50%),
-                      radial-gradient(circle at 70% 70%, rgba(255,140,0,0.2) 0%, transparent 50%);
+          background: radial-gradient(circle at 30% 40%, rgba(244,163,0,0.1) 0%, transparent 50%),
+                      radial-gradient(circle at 70% 70%, rgba(255,140,0,0.1) 0%, transparent 50%);
           pointer-events: none;
+          z-index: 0;
         }
         .container {
           background: rgba(0,0,0,0.85);
@@ -69,7 +77,7 @@ export default function Login({ setUser }) {
           width: 100%;
           border: 2px solid rgba(244,163,0,0.3);
           position: relative;
-          z-index: 10;
+          z-index: 100 !important;
           align-self: flex-start;
         }
         .logo-container { text-align: center; margin-bottom: 40px; }
@@ -114,9 +122,11 @@ export default function Login({ setUser }) {
           width: 100%; padding: 16px;
           background: linear-gradient(135deg, #f4a300 0%, #ff8c00 50%, #f4a300 100%);
           background-size: 200% 200%; color: #000; border: none; border-radius: 10px;
-          font-size: 16px; font-weight: 700; cursor: pointer; transition: all 0.4s;
+          font-size: 16px; font-weight: 700; cursor: pointer !important; transition: all 0.4s;
           margin-top: 15px; text-transform: uppercase; letter-spacing: 1px; height: auto;
           box-shadow: 0 8px 25px rgba(244,163,0,0.4); font-family: 'Poppins', sans-serif;
+          position: relative;
+          z-index: 110 !important;
         }
         .btn:hover { transform: translateY(-3px); box-shadow: 0 12px 35px rgba(244,163,0,0.6); background-position: 100% 50%; }
         .btn:active { transform: translateY(-1px); }

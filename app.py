@@ -31,7 +31,13 @@ app = Flask(__name__,
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', secrets.token_hex(32))
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=7)
 app.config['SESSION_COOKIE_HTTPONLY'] = True
-app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+if os.environ.get('RENDER'):
+    # In production (HTTPS), None + Secure is needed for cross-site cookie reliability in some browsers
+    app.config['SESSION_COOKIE_SAMESITE'] = 'None'
+    app.config['SESSION_COOKIE_SECURE'] = True
+else:
+    app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+    app.config['SESSION_COOKIE_SECURE'] = False
 
 # Enable CORS for React frontend (including production)
 CORS(app, supports_credentials=True, origins=[
@@ -129,13 +135,18 @@ def api_login():
             
         user = verify_user(email, password)
         if user:
-            session['user_id'] = user['id']
-            session['username'] = user['username']
+            user_payload = {
+                'id': user.get('id') or user.get('email') or email,
+                'username': user.get('username') or 'User',
+                'email': user.get('email') or email
+            }
+            session['user_id'] = user_payload['id']
+            session['username'] = user_payload['username']
             session.permanent = True
-            print(f"[DEBUG] Login successful: {email}")
-            return jsonify({'success': True, 'user': {'id': user['id'], 'username': user['username'], 'email': user['email']}})
+            print(f"[DEBUG] Login successful: {email} -> Payload: {user_payload}")
+            return jsonify({'success': True, 'user': user_payload})
         else:
-            print(f"[DEBUG] Login failed: {email} - Invalid credentials")
+            print(f"[DEBUG] Login failed: {email} - Credentials mismatch")
             return jsonify({'success': False, 'message': 'Invalid email or password!'}), 401
     except Exception as e:
         print(f"[ERROR] Login Exception: {e}")
