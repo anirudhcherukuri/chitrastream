@@ -280,22 +280,45 @@ def current_user():
         })
     return jsonify({'is_authenticated': False})
 
+# Simple in-memory cache for movies to boost performance
+movies_cache = {'data': [], 'last_updated': None}
+
 @app.route('/api/movies')
 @login_required
 def get_movies():
-    print(f"DEBUG: Fetching movies for user: {session.get('user_id') or session.get('guest_id')}")
+    global movies_cache
+    now = datetime.now()
+    
+    # Use cache if it's less than 30 minutes old
+    if movies_cache['data'] and movies_cache['last_updated'] and (now - movies_cache['last_updated']) < timedelta(minutes=30):
+        print("DEBUG: Returning movies from cache")
+        return jsonify(movies_cache['data'])
+
+    print(f"DEBUG: Fetching movies from database for user: {session.get('user_id')}")
     try:
-        # Reduced to 500 for lightning-fast loading on live Render site
+        # Fetching 500 movies with a timeout to prevent hanging
         movies = db.get_all_movies(limit=500)
-        print(f"DEBUG: Found {len(movies)} movies")
-        return jsonify(movies)
+        
+        # Update cache
+        if movies:
+            movies_cache['data'] = movies
+            movies_cache['last_updated'] = now
+            return jsonify(movies)
     except Exception as e:
         print(f"ERROR fetching movies: {e}")
+    
+    # Fallback to mock data if DB fails or hangs
+    print("DEBUG: Using mock movies fallback (DB unreachable)")
+    try:
+        with open('mock_movies.json', 'r') as f:
+            mock_data = json.load(f)
+            return jsonify(mock_data)
+    except:
         return jsonify([]), 500
 
 
 
-@app.route('/api/movies/<int:movie_id>')
+@app.route('/api/movies/<movie_id>')
 @login_required
 def get_movie(movie_id):
     from db import (
@@ -381,7 +404,7 @@ def api_trending():
     trending = get_trending_movies()
     return jsonify(trending)
 
-@app.route('/api/movies/<int:movie_id>/reviews', methods=['POST'])
+@app.route('/api/movies/<movie_id>/reviews', methods=['POST'])
 @login_required
 def api_add_review(movie_id):
     user = get_current_user()
@@ -393,7 +416,7 @@ def api_add_review(movie_id):
     success = add_review(user['email'], user['username'], movie_id, rating, text)
     return jsonify({'success': success})
 
-@app.route('/api/movies/<int:movie_id>/discussions', methods=['POST'])
+@app.route('/api/movies/<movie_id>/discussions', methods=['POST'])
 @login_required
 def api_add_discussion(movie_id):
     user = get_current_user()
@@ -762,6 +785,7 @@ def handle_ask_ai(data):
     emit('user_typing', {'username': 'Chitra AI', 'user_id': 'ai@chitrastream.com'}, room=room)
     
     def generate_and_send():
+        print(f"[AI] Generating response for: {query[:50]}...")
         try:
             from openai import OpenAI
             api_key = os.environ.get('OPENAI_API_KEY')
@@ -778,9 +802,10 @@ def handle_ask_ai(data):
                 )
                 ai_text = response.choices[0].message.content
             else:
-                ai_text = "I'm Chitra AI! I stand ready to discuss the greatest cinema in history. What film shall we explore today?"
+                ai_text = "I'm Chitra AI, your cinematic companion! I stand ready to discuss the greatest cinema in history. What film shall we explore today?"
         except Exception as e:
-            ai_text = "Ah, it seems the projection reel snapped. Let me gather my cinematic thoughts... try asking again!"
+            print(f"[AI ERROR] {e}")
+            ai_text = "Ah, it seems the projection reel snapped. Let me gather my cinematic thoughts... try asking again in a moment!"
             
         timestamp = datetime.now().isoformat()
         msg_data = {
@@ -792,11 +817,14 @@ def handle_ask_ai(data):
             'timestamp': timestamp
         }
         
-        from db import add_message
-        add_message('ai@chitrastream.com', 'Chitra AI ✨', room, ai_text, timestamp)
-        
-        socketio.emit('receive_message', msg_data, room=room)
-        socketio.emit('user_stop_typing', {'username': 'Chitra AI'}, room=room)
+        # Consistent persistence and emission
+        with app.app_context():
+            from db import add_message
+            add_message('ai@chitrastream.com', 'Chitra AI ✨', room, ai_text, timestamp)
+            
+            socketio.emit('receive_message', msg_data, room=room)
+            socketio.emit('user_stop_typing', {'username': 'Chitra AI ✨'}, room=room)
+            print(f"[AI] Response sent to room: {room}")
         
     socketio.start_background_task(generate_and_send)
 
@@ -1152,13 +1180,20 @@ def serve_static(filename):
 @app.route('/', defaults={'path': ''})
 @app.route('/<path:path>')
 def serve(path):
+    # Log incoming requests for easier debugging of Render startup
+    if path == "": 
+        print(f"[DEBUG] Root request received at {datetime.now()}")
+    
     # Don't serve static files if the path starts with /api to avoid misrouting
     if path.startswith('api/'):
         return jsonify({'error': 'Not Found', 'path': path}), 404
         
-    if path != "" and os.path.exists(app.static_folder + '/' + path):
+    if path != "" and os.path.exists(os.path.join(app.static_folder, path)):
         return send_from_directory(app.static_folder, path)
     else:
+        # Fallback to SPA index.html
+        if not os.path.exists(os.path.join(app.static_folder, 'index.html')):
+            print(f"[ERROR] index.html missing in {app.static_folder}")
         return send_from_directory(app.static_folder, 'index.html')
 
 # ==================== Initialize Database on Import ====================

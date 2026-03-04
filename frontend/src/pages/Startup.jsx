@@ -28,15 +28,21 @@ const STARTUP_STYLES = `
   @keyframes textFade { 0%, 100% { opacity: 0; } 50% { opacity: 1; } }
 `
 
-export default function Startup() {
+export default function Startup({ user }) {
     const navigate = useNavigate()
 
     useEffect(() => {
+        // If already logged in (locally), jump straight to dashboard to make it feel fast
+        if (user) {
+            navigate('/dashboard', { replace: true })
+            return
+        }
+
         const timer = setTimeout(() => {
-            navigate('/login')
-        }, 3500)
+            navigate('/login', { replace: true })
+        }, 3000)
         return () => clearTimeout(timer)
-    }, [navigate])
+    }, [navigate, user])
 
     return (
         <div className="startup-page">

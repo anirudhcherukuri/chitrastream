@@ -12,13 +12,17 @@ import MovieDetails from './pages/MovieDetails'
 import Startup from './pages/Startup'
 
 function ProtectedRoute({ children, user, loading }) {
-  if (loading) return null
+  if (loading) return (
+    <div style={{ background: '#000', height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ color: '#f4a300', fontSize: '20px', fontWeight: 'bold' }}>CHITRASTREAM LOADING...</div>
+    </div>
+  )
   if (!user) return <Navigate to="/login" replace />
   return children
 }
 
 function PublicRoute({ children, user, loading }) {
-  if (loading) return null
+  if (loading) return null // Let protected routes handle the heavy screen, public can stay quiet
   if (user) return <Navigate to="/dashboard" replace />
   return children
 }
@@ -31,6 +35,7 @@ export default function App() {
     } catch { return null }
   })
   const [loading, setLoading] = useState(true)
+  const [isAuthConfirmed, setIsAuthConfirmed] = useState(false)
 
   useEffect(() => {
     // Sync localStorage whenever user state changes
@@ -46,11 +51,14 @@ export default function App() {
           setUser(data.user)
         } else {
           setUser(null)
+          localStorage.removeItem('chitra_user')
         }
+        setIsAuthConfirmed(true)
         setLoading(false)
       })
-      .catch(() => {
-        // If server is down/cold starting, trust localStorage temporarily but set loading false
+      .catch((err) => {
+        console.warn("Auth check failed:", err)
+        setIsAuthConfirmed(true) // We stop waiting anyway
         setLoading(false)
       })
   }, [])
@@ -58,20 +66,20 @@ export default function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<Startup />} />
+        <Route path="/" element={<Startup user={user} />} />
         <Route path="/login" element={
-          <PublicRoute user={user} loading={loading}>
+          <PublicRoute user={user} loading={loading && !isAuthConfirmed}>
             <Login setUser={setUser} />
           </PublicRoute>
         } />
         <Route path="/signup" element={
-          <PublicRoute user={user} loading={loading}>
+          <PublicRoute user={user} loading={loading && !isAuthConfirmed}>
             <Signup setUser={setUser} />
           </PublicRoute>
         } />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/dashboard" element={
-          <ProtectedRoute user={user} loading={loading}>
+          <ProtectedRoute user={user} loading={loading && !isAuthConfirmed}>
             <Dashboard user={user} setUser={setUser} />
           </ProtectedRoute>
         } />
