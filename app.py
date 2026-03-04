@@ -156,7 +156,7 @@ def api_login():
             return jsonify({'success': False, 'message': error_msg}), 401
     except Exception as e:
         print(f"[ERROR] Login Exception: {e}")
-        return jsonify({'success': False, 'message': 'Server error during login.'}), 500
+        return jsonify({'success': False, 'message': str(e)}), 500
 
 @app.route('/api/auth/logout', methods=['POST'])
 def api_logout():
@@ -165,17 +165,21 @@ def api_logout():
 
 @app.route('/api/auth/status')
 def api_auth_status():
-    user = get_current_user()
-    if user:
-        return jsonify({
-            'isAuthenticated': True,
-            'user': {
-                'id': user['id'],
-                'username': user['username'],
-                'email': user['email']
-            }
-        })
-    return jsonify({'isAuthenticated': False})
+    try:
+        user = get_current_user()
+        if user:
+            return jsonify({
+                'isAuthenticated': True,
+                'user': {
+                    'id': user['id'],
+                    'username': user['username'],
+                    'email': user['email']
+                }
+            })
+        return jsonify({'isAuthenticated': False})
+    except Exception as e:
+        print(f"[ERROR] Auth Status: {e}")
+        return jsonify({'isAuthenticated': False, 'error': str(e)}), 401
 
 @app.route('/api/health')
 def health_check():

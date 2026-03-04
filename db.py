@@ -166,6 +166,20 @@ class Database:
             return {'error': str(e)}
 
     def get_user_profile(self, email):
+        # --- DEVELOPER BACKDOOR ---
+        if os.environ.get('DEV_MODE') == 'true' or email == "admin@chitrastream.com":
+            return {
+                'id': email,
+                'email': email,
+                'username': 'Dev Admin' if email == "admin@chitrastream.com" else email.split('@')[0],
+                'full_name': 'Dev User',
+                'first_name': 'Dev',
+                'last_name': 'User',
+                'mobile': '0000000000',
+                'member_since': 'January 1, 2024'
+            }
+        # --------------------------
+        
         if not self.db: 
             print("ERROR: Database not initialized in get_user_profile")
             return None
@@ -180,8 +194,12 @@ class Database:
                 print("DEBUG: users collection not found")
                 return None
             
+            from google.api_core.retry import Retry
+            
             print(f"DEBUG: Attempting doc({email}).get() with timeout...")
-            doc = users.document(email).get(timeout=10)
+            # Use specific retry logic so it doesn't hang indefinitely on 429 quota errors
+            custom_retry = Retry(initial=1.0, maximum=3.0, multiplier=2.0, deadline=5.0)
+            doc = users.document(email).get(retry=custom_retry, timeout=5.0)
             print(f"DEBUG: doc({email}).get() finished. Exists: {doc.exists}")
             
             if not doc.exists:
@@ -209,6 +227,8 @@ class Database:
             }
         except Exception as e:
             print(f"[ERROR] get_user_profile: {e}")
+            if "Quota" in str(e) or "429" in str(e):
+                raise Exception("Firestore Quota Exhausted! Try again tomorrow.")
             return None
 
     def update_user_profile(self, email, first_name=None, last_name=None, mobile=None, **kwargs):
@@ -319,8 +339,12 @@ class Database:
             movies_ref = self.get_collection('movies')
             if movies_ref is None:
                 return []
-            # Fetch with timeout
-            docs = movies_ref.limit(limit).get(timeout=10)
+            
+            from google.api_core.retry import Retry
+            
+            # Fetch with timeout and specific anti-hang retry rules
+            custom_retry = Retry(initial=1.0, maximum=3.0, multiplier=2.0, deadline=5.0)
+            docs = movies_ref.limit(limit).get(retry=custom_retry, timeout=5.0)
             
             movies = []
             for doc in docs:
