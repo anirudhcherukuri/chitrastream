@@ -1,10 +1,10 @@
 flask
 flask-socketio
 flask-cors
-pymongo[srv]
 bcrypt
 python-dotenv
 openai
 python-dateutil
 gunicorn
 certifi
+firebase-admin
