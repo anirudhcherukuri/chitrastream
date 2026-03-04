@@ -279,17 +279,7 @@ def get_movies():
         print(f"ERROR fetching movies: {e}")
         return jsonify([]), 500
 
-@app.route('/api/movies/<int:movie_id>/reviews', methods=['POST'])
-@login_required
-def api_add_review(movie_id):
-    user = get_current_user()
-    data = request.json
-    rating = data.get('rating', 0)
-    review_text = data.get('review_text', '')
-    
-    from db import add_review
-    success = add_review(user['email'], user['username'], movie_id, rating, review_text)
-    return jsonify({'success': success})
+
 
 @app.route('/api/movies/<int:movie_id>')
 @login_required
