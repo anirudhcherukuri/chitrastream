@@ -122,6 +122,7 @@ def api_login():
         data = request.get_json(silent=True) or {}
         email = data.get('email')
         password = data.get('password')
+        print(f"[DEBUG] Login attempt for: {email}")
         
         if not email or not password:
             return jsonify({'success': False, 'message': 'Email and password required!'}), 400
@@ -131,8 +132,10 @@ def api_login():
             session['user_id'] = user['id']
             session['username'] = user['username']
             session.permanent = True
+            print(f"[DEBUG] Login successful: {email}")
             return jsonify({'success': True, 'user': {'id': user['id'], 'username': user['username'], 'email': user['email']}})
         else:
+            print(f"[DEBUG] Login failed: {email} - Invalid credentials")
             return jsonify({'success': False, 'message': 'Invalid email or password!'}), 401
     except Exception as e:
         print(f"[ERROR] Login Exception: {e}")
@@ -271,8 +274,8 @@ def current_user():
 def get_movies():
     print(f"DEBUG: Fetching movies for user: {session.get('user_id') or session.get('guest_id')}")
     try:
-        # Increased limit for variety, but optimized front-end will handle the lag
-        movies = db.get_all_movies(limit=2000)
+        # Reduced to 800 for stability on Render free tier
+        movies = db.get_all_movies(limit=800)
         print(f"DEBUG: Found {len(movies)} movies")
         return jsonify(movies)
     except Exception as e:

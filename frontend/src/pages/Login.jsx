@@ -11,6 +11,7 @@ export default function Login({ setUser }) {
     e.preventDefault()
     setAlert(null)
     try {
+      console.log('Attempting login for:', email)
       const res = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -18,13 +19,15 @@ export default function Login({ setUser }) {
         body: JSON.stringify({ email, password }),
       })
       const data = await res.json()
+      console.log('Login response:', data)
       if (data.success) {
         setUser(data.user)
         navigate('/dashboard')
       } else {
         setAlert({ type: 'error', msg: data.message || 'Invalid email or password!' })
       }
-    } catch {
+    } catch (err) {
+      console.error('Login error:', err)
       setAlert({ type: 'error', msg: 'Something went wrong. Please try again.' })
     }
   }
@@ -66,7 +69,7 @@ export default function Login({ setUser }) {
           width: 100%;
           border: 2px solid rgba(244,163,0,0.3);
           position: relative;
-          z-index: 1;
+          z-index: 10;
           align-self: flex-start;
         }
         .logo-container { text-align: center; margin-bottom: 40px; }
@@ -99,7 +102,7 @@ export default function Login({ setUser }) {
         .alert-success { background: rgba(76,175,80,0.2); color: #4caf50; border: 2px solid rgba(76,175,80,0.5); }
         .alert-error { background: rgba(244,67,54,0.2); color: #f44336; border: 2px solid rgba(244,67,54,0.5); }
         .form-group { margin-bottom: 24px; }
-        label { display: block; margin-bottom: 8px; color: rgba(255,255,255,0.9); font-weight: 600; font-size: 14px; position: static; pointer-events: auto; transform: none; }
+        label { display: block; margin-bottom: 8px; color: rgba(255,255,255,0.9); font-weight: 600; font-size: 14px; }
         input {
           width: 100%; padding: 14px 16px; border: 2px solid rgba(244,163,0,0.3);
           border-radius: 10px; font-size: 14px; transition: all 0.3s;
@@ -119,11 +122,10 @@ export default function Login({ setUser }) {
         .btn:active { transform: translateY(-1px); }
         .links {
           text-align: center; margin-top: 30px; padding-top: 25px;
-          display: block; color: inherit; font-size: inherit; font-weight: inherit; flex-direction: row;
           border-top: 1px solid rgba(244,163,0,0.2);
         }
         .links a { color: #f4a300; text-decoration: none; font-weight: 600; font-size: 14px; transition: all 0.3s; }
-        .links a:hover { color: #ff8c00; text-decoration: none; }
+        .links a:hover { color: #ff8c00; }
         .signup-link { margin-top: 15px; color: rgba(255,255,255,0.7); font-size: 14px; }
         @media (max-width: 600px) {
           .container { padding: 35px 25px; }
@@ -147,7 +149,7 @@ export default function Login({ setUser }) {
               <label>Password</label>
               <input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••••" required />
             </div>
-            <button type="submit" className="btn" onClick={handleSubmit} style={{ position: 'relative', zIndex: 10, pointerEvents: 'auto' }}>Sign In</button>
+            <button type="submit" className="btn">Sign In</button>
           </form>
           <div className="links">
             <Link to="/forgot-password">Forgot Password?</Link>
