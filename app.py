@@ -1,9 +1,5 @@
-import ssl as _original_ssl  # Save the REAL ssl module before eventlet patches it
-import sys
-_saved_ssl = sys.modules['ssl']  # Keep a reference to the real ssl module
-import eventlet
-eventlet.monkey_patch()
-sys.modules['ssl'] = _saved_ssl  # Restore the real ssl module so PyMongo uses it
+from gevent import monkey
+monkey.patch_all(ssl=False)  # Patch everything EXCEPT ssl (gevent supports this param)
 
 from flask import Flask, render_template, request, redirect, url_for, session, jsonify, flash, send_from_directory
 from flask_socketio import SocketIO, emit, join_room, leave_room, disconnect
@@ -45,10 +41,10 @@ CORS(app, supports_credentials=True, origins=[
     "https://chitrastream.onrender.com"
 ])
 
-# Initialize Socket.IO with eventlet mode (FIXED for Render)
+# Initialize Socket.IO with gevent mode (gevent doesn't break MongoDB SSL)
 socketio = SocketIO(app, 
                    cors_allowed_origins="*",
-                   async_mode='eventlet',
+                   async_mode='gevent',
                    ping_timeout=60,
                    ping_interval=25,
                    logger=True,

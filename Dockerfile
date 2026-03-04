@@ -35,5 +35,5 @@ ENV PYTHONUNBUFFERED=1
 
 EXPOSE 5000
 
-# Using eventlet worker for SocketIO compatibility
-CMD ["gunicorn", "-k", "eventlet", "-w", "1", "--bind", "0.0.0.0:5000", "--timeout", "120", "app:app"]
+# Using gevent worker for SocketIO compatibility (eventlet breaks MongoDB SSL)
+CMD ["gunicorn", "-k", "gevent", "-w", "1", "--bind", "0.0.0.0:5000", "--timeout", "120", "app:app"]
