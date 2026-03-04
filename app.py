@@ -1,5 +1,4 @@
-from gevent import monkey
-monkey.patch_all(ssl=False)  # Patch everything EXCEPT ssl (gevent supports this param)
+# No monkey-patching needed - using threading mode for SocketIO
 
 from flask import Flask, render_template, request, redirect, url_for, session, jsonify, flash, send_from_directory
 from flask_socketio import SocketIO, emit, join_room, leave_room, disconnect
@@ -41,14 +40,12 @@ CORS(app, supports_credentials=True, origins=[
     "https://chitrastream.onrender.com"
 ])
 
-# Initialize Socket.IO with gevent mode (gevent doesn't break MongoDB SSL)
+# Initialize Socket.IO with threading mode (no monkey-patching = no MongoDB SSL issues)
 socketio = SocketIO(app, 
                    cors_allowed_origins="*",
-                   async_mode='gevent',
+                   async_mode='threading',
                    ping_timeout=60,
-                   ping_interval=25,
-                   logger=True,
-                   engineio_logger=True)
+                   ping_interval=25)
 
 
 # Store active users and their current rooms/streams

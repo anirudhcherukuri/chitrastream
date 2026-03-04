@@ -7,6 +7,4 @@ python-dotenv
 openai
 python-dateutil
 gunicorn
-gevent
-gevent-websocket
 certifi

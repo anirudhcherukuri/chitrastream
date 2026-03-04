@@ -35,5 +35,5 @@ ENV PYTHONUNBUFFERED=1
 
 EXPOSE 5000
 
-# Using gevent worker for SocketIO compatibility (eventlet breaks MongoDB SSL)
-CMD ["gunicorn", "-k", "gevent", "-w", "1", "--bind", "0.0.0.0:5000", "--timeout", "120", "app:app"]
+# Using gthread worker - no eventlet/gevent = no MongoDB SSL conflicts
+CMD ["gunicorn", "-k", "gthread", "--threads", "4", "-w", "1", "--bind", "0.0.0.0:5000", "--timeout", "120", "app:app"]
