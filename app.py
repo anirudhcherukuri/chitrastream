@@ -94,7 +94,7 @@ def api_signup():
             return jsonify({'success': False, 'message': 'All fields are required!'}), 400
         
         # Diagnostic check for DB before proceeding
-        if not db or not db.client:
+        if not db or not getattr(db, 'db', None):
             return jsonify({'success': False, 'message': 'Database not connected. Please check your Render environment variables.'}), 503
             
         # Check if user exists

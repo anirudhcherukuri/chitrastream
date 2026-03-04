@@ -124,7 +124,8 @@ class Database:
             user = doc.to_dict()
             if self.verify_password(password, user.get('password_hash', '')):
                 return {
-                    'email': user['email'],
+                    'id': email,
+                    'email': user.get('email', email),
                     'username': f"{user.get('first_name', '')} {user.get('last_name', '')}".strip() or email,
                     'first_name': user.get('first_name', ''),
                     'last_name': user.get('last_name', '')
@@ -152,6 +153,7 @@ class Database:
             full_name = f"{user.get('first_name', '')} {user.get('last_name', '')}".strip()
             
             return {
+                'id': email,
                 'email': user.get('email', email),
                 'full_name': full_name or email,
                 'first_name': user.get('first_name', ''),
