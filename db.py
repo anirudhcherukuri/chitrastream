@@ -591,3 +591,9 @@ def add_discussion(user_email, username, movie_id, comment, parent_id=None):
         return False
 
 db = db_instance
+
+def get_all_movies(limit=100, offset=0):
+    return db_instance.get_all_movies(limit, offset)
+
+def get_movie_details(movie_id):
+    return db_instance.get_movie_details(movie_id)
