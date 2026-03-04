@@ -23,6 +23,6 @@ frontend/dist/
 .idea/
 
 # Artifacts
-C:\Users\vamsh\.gemini\antigravity\brain\
 brain/
 .system_generated/
+firebase-credentials.json
