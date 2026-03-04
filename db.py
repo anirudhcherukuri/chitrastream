@@ -18,13 +18,15 @@ class Database:
             # Use connect=False to avoid issues with forked processes in Gunicorn/Eventlet
             # Use a longer timeout for the initial connection
             self.client = pymongo.MongoClient(
-                self.uri, 
-                serverSelectionTimeoutMS=15000, 
+                self.uri,
+                serverSelectionTimeoutMS=15000,
                 connectTimeoutMS=15000,
                 socketTimeoutMS=15000,
                 connect=False,
                 retryWrites=True,
-                tlsCAFile=certifi.where()
+                tls=True,
+                tlsCAFile=certifi.where(),
+                tlsAllowInvalidCertificates=False
             )
             self.db = self.client[self.db_name]
             # We don't ping in __init__ to allow lazy connection
@@ -190,26 +192,59 @@ class Database:
             print(f"[ERROR] get_user_profile: {e}")
             return None
 
-    def update_user_profile(self, email, **kwargs):
+    def update_user_profile(self, email, first_name=None, last_name=None, mobile=None, **kwargs):
         try:
             if not email:
-                return False
+                return False, "Email is required"
             email = email.strip().lower()
             users = self.get_collection('users')
             if users is None:
-                return False
+                return False, "Database connection error"
             update_data = {}
-            field_map = {'first_name': 'first_name', 'last_name': 'last_name', 'mobile': 'mobile'}
+            if first_name is not None:
+                update_data['first_name'] = first_name
+            if last_name is not None:
+                update_data['last_name'] = last_name
+            if mobile is not None:
+                update_data['mobile'] = mobile
             for k, v in kwargs.items():
-                if k in field_map:
-                    update_data[field_map[k]] = v
-                else:
-                    update_data[k] = v
-            users.update_one({'email': email}, {'$set': update_data})
-            return True
+                update_data[k] = v
+            if update_data:
+                users.update_one({'email': email}, {'$set': update_data})
+            return True, "Profile updated successfully"
         except Exception as e:
             print(f"[ERROR] update_user_profile: {e}")
-            return False
+            return False, f"Update failed: {str(e)}"
+
+    def change_user_password(self, email, current_password, new_password):
+        try:
+            if not email:
+                return False, "Email is required"
+            email = email.strip().lower()
+            users = self.get_collection('users')
+            if users is None:
+                return False, "Database connection error"
+            
+            user = users.find_one({'email': email})
+            if not user:
+                return False, "User not found"
+            
+            if not self.verify_password(current_password, user.get('password_hash', '')):
+                return False, "Current password is incorrect"
+            
+            if not new_password or len(new_password) < 6:
+                return False, "New password must be at least 6 characters"
+            
+            new_hash = self.hash_password(new_password)
+            users.update_one({'email': email}, {'$set': {'password_hash': new_hash}})
+            return True, "Password changed successfully"
+        except Exception as e:
+            print(f"[ERROR] change_user_password: {e}")
+            return False, f"Password change failed: {str(e)}"
+
+    def get_connection(self):
+        """Legacy compatibility stub - returns None since we use MongoDB now"""
+        return None
 
     def get_all_movies(self, limit=100, offset=0):
         try:
@@ -372,4 +407,249 @@ def verify_user_email(e): return True
 def save_private_message(*args): return True
 def get_private_messages(*args): return []
 def get_user_conversations(e): return []
+
+# ==================== Missing functions required by app.py ====================
+
+def get_user_watchlist(email):
+    """Get user's watchlist movies"""
+    if not db_instance:
+        return []
+    try:
+        watchlist = db_instance.get_collection('watchlist')
+        if watchlist is None:
+            return []
+        entries = watchlist.find({'user_email': email.strip().lower()}).sort('added_at', -1)
+        movies_col = db_instance.get_collection('movies')
+        results = []
+        for entry in entries:
+            movie_id = entry.get('movie_id')
+            if movie_id:
+                movie = None
+                try:
+                    if ObjectId.is_valid(str(movie_id)):
+                        movie = movies_col.find_one({'_id': ObjectId(str(movie_id))})
+                    if not movie:
+                        movie = movies_col.find_one({'MovieID': int(movie_id)})
+                except:
+                    pass
+                if movie:
+                    movie['id'] = str(movie['_id'])
+                    if '_id' in movie: del movie['_id']
+                    results.append(movie)
+        return results
+    except Exception as e:
+        print(f"[ERROR] get_user_watchlist: {e}")
+        return []
+
+def toggle_watchlist(email, movie_id):
+    """Add or remove a movie from user's watchlist"""
+    if not db_instance:
+        return False, 'removed'
+    try:
+        watchlist = db_instance.get_collection('watchlist')
+        if watchlist is None:
+            return False, 'removed'
+        email = email.strip().lower()
+        existing = watchlist.find_one({'user_email': email, 'movie_id': str(movie_id)})
+        if existing:
+            watchlist.delete_one({'_id': existing['_id']})
+            return True, 'removed'
+        else:
+            watchlist.insert_one({
+                'user_email': email,
+                'movie_id': str(movie_id),
+                'added_at': datetime.now()
+            })
+            return True, 'added'
+    except Exception as e:
+        print(f"[ERROR] toggle_watchlist: {e}")
+        return False, 'error'
+
+def increment_view_count(movie_id):
+    """Increment the view count for a movie"""
+    if not db_instance:
+        return
+    try:
+        movies = db_instance.get_collection('movies')
+        if movies is None:
+            return
+        if ObjectId.is_valid(str(movie_id)):
+            movies.update_one({'_id': ObjectId(str(movie_id))}, {'$inc': {'view_count': 1}})
+        else:
+            movies.update_one({'MovieID': int(movie_id)}, {'$inc': {'view_count': 1}})
+    except Exception as e:
+        print(f"[ERROR] increment_view_count: {e}")
+
+def get_movie_platforms_v2(movie_id):
+    """Get streaming platforms for a movie"""
+    try:
+        if not db_instance:
+            return []
+        platforms = db_instance.get_collection('movie_platforms')
+        if platforms is None:
+            return []
+        results = []
+        query = {'movie_id': str(movie_id)}
+        for doc in platforms.find(query):
+            results.append({
+                'name': doc.get('platform_name', ''),
+                'url': doc.get('url', ''),
+                'price': doc.get('price', '')
+            })
+        return results
+    except Exception as e:
+        print(f"[ERROR] get_movie_platforms_v2: {e}")
+        return []
+
+def get_movie_reviews(movie_id):
+    """Get reviews for a movie"""
+    try:
+        if not db_instance:
+            return []
+        reviews = db_instance.get_collection('reviews')
+        if reviews is None:
+            return []
+        results = []
+        for doc in reviews.find({'movie_id': str(movie_id)}).sort('created_at', -1).limit(20):
+            results.append({
+                'id': str(doc['_id']),
+                'UserEmail': doc.get('user_email', ''),
+                'Username': doc.get('username', ''),
+                'Rating': doc.get('rating', 0),
+                'ReviewText': doc.get('review_text', ''),
+                'CreatedAt': doc.get('created_at', datetime.now())
+            })
+        return results
+    except Exception as e:
+        print(f"[ERROR] get_movie_reviews: {e}")
+        return []
+
+def get_movie_discussions(movie_id):
+    """Get discussions for a movie"""
+    try:
+        if not db_instance:
+            return []
+        discussions = db_instance.get_collection('discussions')
+        if discussions is None:
+            return []
+        results = []
+        for doc in discussions.find({'movie_id': str(movie_id)}).sort('created_at', -1).limit(20):
+            results.append({
+                'id': str(doc['_id']),
+                'UserEmail': doc.get('user_email', ''),
+                'Username': doc.get('username', ''),
+                'Comment': doc.get('comment', ''),
+                'ParentId': doc.get('parent_id'),
+                'CreatedAt': doc.get('created_at', datetime.now())
+            })
+        return results
+    except Exception as e:
+        print(f"[ERROR] get_movie_discussions: {e}")
+        return []
+
+def get_recommendations(movie_id):
+    """Get movie recommendations based on genre similarity"""
+    try:
+        if not db_instance:
+            return []
+        movies = db_instance.get_collection('movies')
+        if movies is None:
+            return []
+        # Get the current movie to find its genre
+        current = None
+        if ObjectId.is_valid(str(movie_id)):
+            current = movies.find_one({'_id': ObjectId(str(movie_id))})
+        if not current:
+            try:
+                current = movies.find_one({'MovieID': int(movie_id)})
+            except:
+                pass
+        if not current:
+            return []
+        
+        genre = current.get('genre', current.get('Genre', ''))
+        if genre:
+            first_genre = genre.split(',')[0].strip()
+            query = {
+                '$or': [
+                    {'genre': {'$regex': first_genre, '$options': 'i'}},
+                    {'Genre': {'$regex': first_genre, '$options': 'i'}}
+                ],
+                '_id': {'$ne': current['_id']}
+            }
+            cursor = movies.find(query).limit(10)
+        else:
+            cursor = movies.find({'_id': {'$ne': current['_id']}}).limit(10)
+        
+        results = []
+        for doc in cursor:
+            doc['id'] = str(doc['_id'])
+            if '_id' in doc: del doc['_id']
+            results.append(doc)
+        return results
+    except Exception as e:
+        print(f"[ERROR] get_recommendations: {e}")
+        return []
+
+def get_trending_movies():
+    """Get trending movies based on view count"""
+    try:
+        if not db_instance:
+            return []
+        movies = db_instance.get_collection('movies')
+        if movies is None:
+            return []
+        cursor = movies.find().sort('view_count', -1).limit(15)
+        results = []
+        for doc in cursor:
+            doc['id'] = str(doc['_id'])
+            if '_id' in doc: del doc['_id']
+            results.append(doc)
+        return results
+    except Exception as e:
+        print(f"[ERROR] get_trending_movies: {e}")
+        return []
+
+def add_review(user_email, username, movie_id, rating, review_text):
+    """Add a review for a movie"""
+    try:
+        if not db_instance:
+            return False
+        reviews = db_instance.get_collection('reviews')
+        if reviews is None:
+            return False
+        reviews.insert_one({
+            'user_email': user_email,
+            'username': username,
+            'movie_id': str(movie_id),
+            'rating': float(rating) if rating else 0,
+            'review_text': review_text or '',
+            'created_at': datetime.now()
+        })
+        return True
+    except Exception as e:
+        print(f"[ERROR] add_review: {e}")
+        return False
+
+def add_discussion(user_email, username, movie_id, comment, parent_id=None):
+    """Add a discussion comment for a movie"""
+    try:
+        if not db_instance:
+            return False
+        discussions = db_instance.get_collection('discussions')
+        if discussions is None:
+            return False
+        discussions.insert_one({
+            'user_email': user_email,
+            'username': username,
+            'movie_id': str(movie_id),
+            'comment': comment or '',
+            'parent_id': parent_id,
+            'created_at': datetime.now()
+        })
+        return True
+    except Exception as e:
+        print(f"[ERROR] add_discussion: {e}")
+        return False
+
 db = db_instance  # Export the instance for health check

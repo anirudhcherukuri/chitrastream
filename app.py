@@ -1,5 +1,8 @@
+import ssl  # Import ssl BEFORE eventlet patches it
+import pymongo  # Import pymongo BEFORE eventlet patches ssl
+import certifi  # Import certifi BEFORE eventlet patches ssl
 import eventlet
-eventlet.monkey_patch()
+eventlet.monkey_patch(ssl=False)  # Patch everything EXCEPT ssl (fixes MongoDB Atlas TLS)
 
 from flask import Flask, render_template, request, redirect, url_for, session, jsonify, flash, send_from_directory
 from flask_socketio import SocketIO, emit, join_room, leave_room, disconnect
@@ -205,15 +208,29 @@ def api_profile():
         return jsonify({'success': False, 'message': 'Not authenticated'}), 401
     
     from db import db as database
-    profile_data = database.get_user_profile(user['email'])
+    profile_data = database.get_user_profile(user['email']) if database else None
+    
+    if not profile_data:
+        profile_data = {'full_name': user['username'], 'mobile': '', 'member_since': 'Unknown'}
+    
+    # Calculate days_member
+    days_member = 0
+    member_since = profile_data.get('member_since', '')
+    if member_since and member_since != 'Unknown':
+        try:
+            from datetime import datetime as dt
+            join_date = dt.strptime(member_since, '%B %d, %Y')
+            days_member = (dt.now() - join_date).days
+        except:
+            pass
     
     return jsonify({
         'success': True,
         'full_name': profile_data.get('full_name', user['username']),
         'email': user['email'],
-        'mobile': profile_data.get('mobile'),
-        'member_since': profile_data.get('member_since'),
-        'days_member': profile_data.get('days_member', 0)
+        'mobile': profile_data.get('mobile', ''),
+        'member_since': profile_data.get('member_since', 'Unknown'),
+        'days_member': days_member
     })
 
 @app.route('/api/profile/update', methods=['POST'])
@@ -322,18 +339,23 @@ def get_movie(movie_id):
         worth_score = (movie_rating * 4.5) + (avg_user * 4.5) + bonus
         movie['worth_score'] = min(100, int(worth_score))
         
-        # Check if in user watchlist
+        # Check if in user watchlist (MongoDB)
         user = get_current_user()
-        from db import db as database
         movie['in_watchlist'] = False
         if user:
-            conn = database.get_connection()
-            if conn:
-                cursor = conn.cursor()
-                cursor.execute("SELECT 1 FROM UserWatchlist WHERE UserEmail = ? AND MovieId = ?", (user['email'], movie_id))
-                if cursor.fetchone():
-                    movie['in_watchlist'] = True
-                conn.close()
+            try:
+                from db import db as database
+                if database:
+                    watchlist_col = database.get_collection('watchlist')
+                    if watchlist_col:
+                        entry = watchlist_col.find_one({
+                            'user_email': user['email'].strip().lower(),
+                            'movie_id': str(movie_id)
+                        })
+                        if entry:
+                            movie['in_watchlist'] = True
+            except Exception as e:
+                print(f"[WARN] Watchlist check failed: {e}")
         
         return jsonify(movie)
     return jsonify({'success': False, 'message': 'Movie not found'}), 404
@@ -1112,11 +1134,22 @@ def handle_stream_reaction(data):
 
 @app.errorhandler(404)
 def not_found(e):
-    return render_template('404.html'), 404
+    # Serve the React SPA for 404s (let React handle routing)
+    try:
+        return send_from_directory(app.static_folder, 'index.html')
+    except:
+        return jsonify({'error': 'Not Found'}), 404
 
 @app.errorhandler(500)
 def server_error(e):
-    return render_template('500.html'), 500
+    return jsonify({'error': 'Internal Server Error'}), 500
+
+# ==================== Serve Static Assets ====================
+
+@app.route('/static/<path:filename>')
+def serve_static(filename):
+    """Serve files from the project root static/ folder (logos, etc.)"""
+    return send_from_directory('static', filename)
 
 # ==================== Serve React Frontend ====================
 
@@ -1132,19 +1165,21 @@ def serve(path):
     else:
         return send_from_directory(app.static_folder, 'index.html')
 
+# ==================== Initialize Database on Import ====================
+# This runs whether Flask is started directly OR via Gunicorn (app:app)
+try:
+    print("Initializing database...")
+    init_db()
+    print("[OK] Database initialized successfully!")
+except Exception as e:
+    print(f"[ERROR] Database initialization failed: {e}")
+    print("Continuing with server startup...")
+
 # ==================== Run Application ====================
 
 if __name__ == '__main__':
-    try:
-        print("Initializing database...")
-        init_db()
-        print("[OK] Database initialized successfully!")
-    except Exception as e:
-        print(f"[ERROR] Database initialization failed: {e}")
-        print("Continuing with server startup...")
-
     print("Starting server on http://0.0.0.0:5000...")
     socketio.run(app, 
                 host='0.0.0.0', 
-                port=5000,
+                port=int(os.environ.get('PORT', 5000)),
                 debug=True)

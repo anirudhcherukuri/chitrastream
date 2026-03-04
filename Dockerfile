@@ -15,12 +15,19 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy frontend code and build it
-COPY frontend/ ./frontend/
-RUN cd frontend && npm install --legacy-peer-deps && npm run build
+# Copy backend code first (excludes frontend/dist via .dockerignore)
+COPY app.py db.py db_mongo.py ./
+COPY static/ ./static/
+COPY render.yaml ./
 
-# Copy remaining backend code
-COPY . .
+# Copy frontend source and build it
+COPY frontend/package.json frontend/package-lock.json ./frontend/
+RUN cd frontend && npm install --legacy-peer-deps
+
+COPY frontend/index.html frontend/vite.config.js frontend/eslint.config.js ./frontend/
+COPY frontend/src/ ./frontend/src/
+COPY frontend/public/ ./frontend/public/
+RUN cd frontend && npm run build
 
 # Environment variables
 ENV PORT=5000
@@ -29,4 +36,4 @@ ENV PYTHONUNBUFFERED=1
 EXPOSE 5000
 
 # Using eventlet worker for SocketIO compatibility
-CMD ["gunicorn", "-k", "eventlet", "-w", "1", "--bind", "0.0.0.0:5000", "app:app"]
+CMD ["gunicorn", "-k", "eventlet", "-w", "1", "--bind", "0.0.0.0:5000", "--timeout", "120", "app:app"]
