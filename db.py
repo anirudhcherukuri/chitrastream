@@ -152,6 +152,13 @@ class Database:
             user = doc.to_dict()
             full_name = f"{user.get('first_name', '')} {user.get('last_name', '')}".strip()
             
+            # Safe member_since handling
+            ms = user.get('created_at', 'Unknown')
+            if hasattr(ms, 'strftime'):
+                ms = ms.strftime('%B %d, %Y')
+            elif hasattr(ms, 'isoformat'):
+                ms = ms.isoformat()
+            
             return {
                 'id': email,
                 'email': user.get('email', email),
@@ -159,7 +166,7 @@ class Database:
                 'first_name': user.get('first_name', ''),
                 'last_name': user.get('last_name', ''),
                 'mobile': user.get('mobile', ''),
-                'member_since': user.get('created_at', 'Unknown'),
+                'member_since': str(ms),
             }
         except Exception as e:
             print(f"[ERROR] get_user_profile: {e}")
@@ -285,12 +292,15 @@ class Database:
             results = []
             for doc in docs:
                 data = doc.to_dict()
+                ts = data.get('timestamp', datetime.now())
+                if hasattr(ts, 'isoformat'):
+                    ts = ts.isoformat()
                 results.append({
                     'id': doc.id,
                     'user_email': data.get('user_email', ''),
                     'username': data.get('username', 'Unknown'),
                     'message': data.get('message', ''),
-                    'timestamp': data.get('timestamp', datetime.now())
+                    'timestamp': str(ts)
                 })
             return results
         except Exception as e:
@@ -475,13 +485,16 @@ def get_movie_reviews(movie_id):
         results = []
         for doc in docs:
             data = doc.to_dict()
+            ts = data.get('created_at', datetime.now())
+            if hasattr(ts, 'isoformat'):
+                ts = ts.isoformat()
             results.append({
                 'id': doc.id,
                 'UserEmail': data.get('user_email', ''),
                 'Username': data.get('username', ''),
                 'Rating': data.get('rating', 0),
                 'ReviewText': data.get('review_text', ''),
-                'CreatedAt': data.get('created_at', datetime.now())
+                'CreatedAt': str(ts)
             })
         return results
     except Exception as e:
@@ -499,13 +512,16 @@ def get_movie_discussions(movie_id):
         results = []
         for doc in docs:
             data = doc.to_dict()
+            ts = data.get('created_at', datetime.now())
+            if hasattr(ts, 'isoformat'):
+                ts = ts.isoformat()
             results.append({
                 'id': doc.id,
                 'UserEmail': data.get('user_email', ''),
                 'Username': data.get('username', ''),
                 'Comment': data.get('comment', ''),
                 'ParentId': data.get('parent_id'),
-                'CreatedAt': data.get('created_at', datetime.now())
+                'CreatedAt': str(ts)
             })
         return results
     except Exception as e:
