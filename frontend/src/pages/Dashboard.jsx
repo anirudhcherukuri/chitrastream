@@ -275,9 +275,17 @@ export default function Dashboard({ user, setUser }) {
     navigate('/login')
   }
 
-  const allGenres = useMemo(() =>
-    ['All', ...new Set(allMovies.flatMap(m => (m.genre || m.Genre || '').split(',').map(g => g.trim())))].sort()
-    , [allMovies])
+  const allGenres = useMemo(() => {
+    const genres = new Set()
+    allMovies.forEach(m => {
+      const gList = (m.genre || m.Genre || '').split(',')
+      gList.forEach(g => {
+        const trimmed = g.trim()
+        if (trimmed) genres.add(trimmed)
+      })
+    })
+    return ['All', ...Array.from(genres).sort()]
+  }, [allMovies])
 
   const filteredMovies = useMemo(() => {
     return allMovies.filter(m => {

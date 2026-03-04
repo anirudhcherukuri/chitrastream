@@ -325,33 +325,48 @@ class Database:
             print(f"[ERROR] add_message: {e}")
             return False
 
-    def get_room_messages(self, room, limit=50):
+    def get_room_messages(self, room, limit=300):
         try:
             messages = self.get_collection('chat_messages')
             if messages is None:
                 return []
             room_query = room.lower() if isinstance(room, str) else room
-            # Get latest 50 messages (DESC)
-            docs = messages.where('room', '==', room_query).order_by('timestamp', direction=firestore.Query.DESCENDING).limit(limit).get()
+            
+            # Fetch without order_by to avoid index requirement, then sort in memory
+            # This is much more robust for dynamic rooms
+            docs = messages.where('room', '==', room_query).limit(1000).get()
             
             results = []
             for doc in docs:
                 data = doc.to_dict()
-                ts = data.get('timestamp', datetime.now())
-                if hasattr(ts, 'isoformat'):
-                    # Convert to ISO string for JSON serialization
-                    ts = ts.isoformat()
+                ts = data.get('timestamp')
+                # Fallback for old messages without timestamp object
+                if not ts:
+                    ts = datetime.now()
+                
                 results.append({
                     'id': doc.id,
                     'user_email': data.get('user_email', ''),
                     'username': data.get('username', 'Unknown'),
                     'message': data.get('message', ''),
-                    'timestamp': str(ts)
+                    'timestamp': ts # Keep as object for sorting
                 })
             
-            # Reverse results to be in chronological order for the chat UI
-            results.reverse()
-            return results
+            # Sort by timestamp DESC in memory
+            results.sort(key=lambda x: x['timestamp'], reverse=True)
+            
+            # Take only the requested limit
+            final_results = results[:limit]
+            
+            # Convert timestamps to strings for JSON and reverse for chronological UI
+            final_results.reverse()
+            for r in final_results:
+                if hasattr(r['timestamp'], 'isoformat'):
+                    r['timestamp'] = r['timestamp'].isoformat()
+                else:
+                    r['timestamp'] = str(r['timestamp'])
+                    
+            return final_results
         except Exception as e:
             print(f"[ERROR] get_room_messages: {e}")
             return []

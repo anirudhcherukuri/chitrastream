@@ -285,8 +285,8 @@ def current_user():
 def get_movies():
     print(f"DEBUG: Fetching movies for user: {session.get('user_id') or session.get('guest_id')}")
     try:
-        # Reduced to 800 for stability on Render free tier
-        movies = db.get_all_movies(limit=800)
+        # Reduced to 500 for lightning-fast loading on live Render site
+        movies = db.get_all_movies(limit=500)
         print(f"DEBUG: Found {len(movies)} movies")
         return jsonify(movies)
     except Exception as e:
