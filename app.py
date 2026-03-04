@@ -271,7 +271,8 @@ def current_user():
 def get_movies():
     print(f"DEBUG: Fetching movies for user: {session.get('user_id') or session.get('guest_id')}")
     try:
-        movies = db.get_all_movies(limit=3000)
+        # Only fetch 500 movies for speed (Dashboard only uses ~200 anyway)
+        movies = db.get_all_movies(limit=500)
         print(f"DEBUG: Found {len(movies)} movies")
         return jsonify(movies)
     except Exception as e:

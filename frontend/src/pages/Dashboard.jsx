@@ -226,14 +226,19 @@ export default function Dashboard({ user, setUser }) {
         const watchlistData = await watchlistRes.json()
         const trendingData = await trendingRes.json()
 
-        const uniqueByTitle = Array.from(new Set(moviesData.map(m => (m.title || m.Title))))
-          .map(title => moviesData.find(m => (m.title || m.Title) === title))
+        // Optimized de-duplication logic (O(N) instead of O(N^2))
+        const getUnique = (arr) => {
+          const seen = new Map();
+          arr.forEach(m => {
+            const title = (m.title || m.Title || "").toLowerCase();
+            if (!seen.has(title)) seen.set(title, m);
+          });
+          return Array.from(seen.values());
+        }
 
-        const uniqueTrending = Array.from(new Set(trendingData.map(m => (m.title || m.Title))))
-          .map(title => trendingData.find(m => (m.title || m.Title) === title))
-
-        const uniqueWatchlist = Array.from(new Set(watchlistData.map(m => (m.title || m.Title))))
-          .map(title => watchlistData.find(m => (m.title || m.Title) === title))
+        const uniqueByTitle = getUnique(moviesData)
+        const uniqueTrending = getUnique(trendingData)
+        const uniqueWatchlist = getUnique(watchlistData)
 
         setAllMovies(uniqueByTitle)
         setWatchlist(uniqueWatchlist)
