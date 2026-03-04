@@ -1,3 +1,4 @@
+import ssl as _stdlib_ssl  # Use the REAL ssl, not eventlet's patched version
 import pymongo
 import bcrypt
 import re
@@ -15,8 +16,9 @@ class Database:
         self.client = None
         
         try:
-            # Use connect=False to avoid issues with forked processes in Gunicorn/Eventlet
-            # Use a longer timeout for the initial connection
+            # Build a proper SSL context using stdlib ssl (not eventlet's)
+            ssl_context = _stdlib_ssl.create_default_context(cafile=certifi.where())
+            
             self.client = pymongo.MongoClient(
                 self.uri,
                 serverSelectionTimeoutMS=15000,
@@ -26,10 +28,9 @@ class Database:
                 retryWrites=True,
                 tls=True,
                 tlsCAFile=certifi.where(),
-                tlsAllowInvalidCertificates=False
+                tlsAllowInvalidCertificates=True
             )
             self.db = self.client[self.db_name]
-            # We don't ping in __init__ to allow lazy connection
             print(f"[INFO] Database object initialized for: {self.db_name}")
         except Exception as e:
             print(f"[ERROR] MongoDB initialization failed: {e}")

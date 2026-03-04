@@ -1,8 +1,9 @@
-import ssl  # Import ssl BEFORE eventlet patches it
-import pymongo  # Import pymongo BEFORE eventlet patches ssl
-import certifi  # Import certifi BEFORE eventlet patches ssl
+import ssl as _original_ssl  # Save the REAL ssl module before eventlet patches it
+import sys
+_saved_ssl = sys.modules['ssl']  # Keep a reference to the real ssl module
 import eventlet
-eventlet.monkey_patch(ssl=False)  # Patch everything EXCEPT ssl (fixes MongoDB Atlas TLS)
+eventlet.monkey_patch()
+sys.modules['ssl'] = _saved_ssl  # Restore the real ssl module so PyMongo uses it
 
 from flask import Flask, render_template, request, redirect, url_for, session, jsonify, flash, send_from_directory
 from flask_socketio import SocketIO, emit, join_room, leave_room, disconnect
