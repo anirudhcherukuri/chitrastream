@@ -329,6 +329,64 @@ const CHITRA_WA_STYLES = `
   .gif-grid { flex: 1; overflow-y: auto; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 10px; }
   .gif-item { width: 100%; border-radius: 10px; cursor: pointer; transition: 0.3s; }
   .gif-item:hover { transform: scale(1.05); }
+
+  /* RESPONSIVE DESIGN */
+  @media (max-width: 968px) {
+    .wa-container { flex-direction: column; }
+    .wa-sidebar { 
+      width: 100%; 
+      height: 25vh; 
+      min-height: 220px; 
+      border-right: none;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+    .wa-chats-list { 
+      display: flex; 
+      flex-direction: row; 
+      overflow-x: auto; 
+      overflow-y: hidden;
+    }
+    .wa-chat-item {
+      flex-direction: column;
+      justify-content: center;
+      min-width: 120px;
+      border-bottom: none;
+      border-right: 1px solid rgba(255,255,255,0.02);
+      text-align: center;
+      padding: 10px;
+    }
+    .wa-chat-item.active { border-left: none; border-bottom: 4px solid var(--accent); }
+    .wa-chat-avatar { margin: 0 auto; }
+    .wa-chat-preview { display: none; }
+    .wa-main { flex: 1; height: 75vh; }
+    .wa-messages-area { padding: 20px 5%; }
+    .wa-msg { max-width: 90%; }
+    .wa-input-section { padding: 15px 10px; gap: 8px; }
+    .wa-send-btn { width: 45px; height: 45px; font-size: 18px; }
+    .wa-tool-icon { font-size: 20px; padding: 5px; }
+  }
+
+  @media (max-width: 480px) {
+    .wa-sidebar-header {
+      padding: 0 15px;
+      height: 60px;
+    }
+    .wa-logo {
+      height: 35px;
+    }
+    .wa-main-header {
+      padding: 0 15px;
+      height: 65px;
+    }
+    .wa-header-name {
+      font-size: 16px;
+    }
+    .gif-panel {
+      width: 90%;
+      left: 5%;
+      bottom: 80px;
+    }
+  }
 `
 
 const SHARED_SECRET = "ChitraStream_E2EE_Alpha_2026"
