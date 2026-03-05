@@ -136,16 +136,31 @@ const DASHBOARD_STYLES = `
   .arrow-left { left: 0; border-radius: 0 4px 4px 0; }
   .arrow-right { right: 0; border-radius: 4px 0 0 4px; }
   
+  .mobile-bottom-nav { display: none; }
+  
   @media (max-width: 1024px) {
     .nav-content { padding: 15px 30px; } .hero { height: 70vh; } .hero-content { padding: 0 30px; } .hero-title { font-size: 48px; } .content-wrapper { padding: 0 30px 40px; }
     .movie-card { min-width: 160px; }
   }
   @media (max-width: 768px) {
-    .nav-menu, .search-box { display: none; }
+    body { padding-bottom: 65px; }
+    .nav-menu { display: none; }
     .nav-content { padding: 15px 20px; } .hero { height: 60vh; } .hero-content { padding: 0 20px; } .hero-title { font-size: 36px; } 
     .hero-overview { font-size: 15px; -webkit-line-clamp: 3; }
     .btn-hero { padding: 10px 20px; font-size: 14px; }
     .content-wrapper { padding: 0 20px 30px; } .row-title { font-size: 20px; } .movie-card { min-width: 130px; } .scroll-arrow { display: none; }
+    
+    .mobile-bottom-nav {
+      display: flex; position: fixed; bottom: 0; left: 0; width: 100%;
+      background: rgba(10,10,10,0.98); backdrop-filter: blur(15px);
+      border-top: 1px solid rgba(244,163,0,0.2); z-index: 2000;
+      justify-content: space-around; padding: 12px 0;
+      box-shadow: 0 -5px 20px rgba(0,0,0,0.5);
+    }
+    .mobile-nav-item {
+      display: flex; flex-direction: column; align-items: center; color: rgba(255,255,255,0.6); font-size: 11px; text-decoration: none; cursor: pointer; transition: 0.3s;
+    }
+    .mobile-nav-item:hover, .mobile-nav-item.active { filter: drop-shadow(0 0 5px rgba(244,163,0,0.5)); color: #f4a300; }
   }
 `
 
@@ -418,8 +433,6 @@ export default function Dashboard({ user, setUser }) {
       )}
 
       <div className="content-wrapper">
-
-
         {loading ? (
           <div style={{ textAlign: 'center', padding: '100px', color: '#e50914' }}>Loading...</div>
         ) : isActivelyFiltering ? (
@@ -429,6 +442,25 @@ export default function Dashboard({ user, setUser }) {
             <MovieRow key={i} title={row.title} movies={row.movies} onMovieClick={setSelectedMovieId} />
           ))
         )}
+      </div>
+
+      <div className="mobile-bottom-nav">
+        <div className="mobile-nav-item active" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
+          <span style={{ fontSize: '20px', marginBottom: '4px' }}>🏠</span>
+          Home
+        </div>
+        <div className="mobile-nav-item" onClick={() => { setIsSearchOpen(true); window.scrollTo({ top: 0, behavior: 'smooth' }); }}>
+          <span style={{ fontSize: '20px', marginBottom: '4px' }}>🔍</span>
+          Search
+        </div>
+        <div className="mobile-nav-item" onClick={() => navigate('/community')}>
+          <span style={{ fontSize: '20px', marginBottom: '4px' }}>💬</span>
+          Chat
+        </div>
+        <div className="mobile-nav-item" onClick={() => navigate('/profile')}>
+          <span style={{ fontSize: '20px', marginBottom: '4px' }}>👤</span>
+          Profile
+        </div>
       </div>
 
       <AIAssistant />
