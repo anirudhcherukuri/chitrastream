@@ -23,8 +23,8 @@ class Database:
             try:
                 self.app = firebase_admin.get_app()
             except ValueError:
-                if os.environ.get('DEV_MODE') == 'true':
-                    print("[INFO] DEV_MODE active: Skipping Firebase initialization")
+                if os.environ.get('DEV_MODE') == 'true' and not firebase_creds and not os.path.exists(cred_file):
+                    print("[INFO] DEV_MODE active and no credentials: Using mock database")
                     self.db = None
                     return
                 
@@ -90,15 +90,20 @@ class Database:
             if not re.match(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$', email):
                 return False, "Invalid email format"
             
-            users = self.get_collection('users')
-            if users is None:
-                return False, "Database connection error"
-            
             # Check if user already exists
-            existing = users.where('email', '==', email).limit(1).get()
-            if len(list(existing)) > 0:
-                return False, "Email already registered"
-            
+            try:
+                users = self.get_collection('users')
+                if users is not None:
+                    existing = users.where('email', '==', email).limit(1).get()
+                    if len(list(existing)) > 0:
+                        return False, "Email already registered"
+            except Exception as e:
+                print(f"[DEBUG] DB check failed in register_user: {e}")
+                if os.environ.get('DEV_MODE') == 'true':
+                    print("[DEBUG] Bypassing existing user check for DEV_MODE")
+                else:
+                    return False, f"Database error: {str(e)}"
+
             # Create user document
             password_hash = self.hash_password(password)
             user_data = {
@@ -113,9 +118,21 @@ class Database:
                 'is_active': True
             }
             
-            users.document(email).set(user_data)
-            print(f"[OK] User registered: {email}")
-            return True, "Registration successful"
+            try:
+                if users is not None:
+                    users.document(email).set(user_data)
+                    print(f"[OK] User registered: {email}")
+                    return True, "Registration successful"
+            except Exception as e:
+                print(f"[ERROR] register_user write failed: {e}")
+                if os.environ.get('DEV_MODE') == 'true':
+                    print("[DEBUG] Bypassing failed write for DEV_MODE")
+                    return True, "Registration successful (Mock)"
+                return False, f"Registration failed: {str(e)}"
+                
+            if os.environ.get('DEV_MODE') == 'true':
+                return True, "Registration successful (Local Mock)"
+            return False, "Database connection error"
             
         except Exception as e:
             print(f"[ERROR] register_user: {e}")
@@ -184,8 +201,43 @@ class Database:
             return {'error': str(e)}
 
     def get_user_profile(self, email):
-        # --- DEVELOPER BACKDOOR ---
+        if not email:
+            return None
+        email = email.strip().lower()
+
+        # Try actual database first
+        if self.db:
+            try:
+                print(f"DEBUG: Fetching profile for {email}...")
+                users = self.get_collection('users')
+                if users:
+                    from google.api_core.retry import Retry
+                    custom_retry = Retry(initial=1.0, maximum=3.0, multiplier=2.0, deadline=5.0)
+                    doc = users.document(email).get(retry=custom_retry, timeout=5.0)
+                    if doc.exists:
+                        user = doc.to_dict()
+                        full_name = f"{user.get('first_name', '')} {user.get('last_name', '')}".strip()
+                        ms = user.get('created_at', 'Unknown')
+                        if hasattr(ms, 'strftime'): ms = ms.strftime('%B %d, %Y')
+                        elif hasattr(ms, 'isoformat'): ms = ms.isoformat()
+                        
+                        return {
+                            'id': email,
+                            'email': user.get('email', email),
+                            'username': full_name or email,
+                            'full_name': full_name or email,
+                            'first_name': user.get('first_name', ''),
+                            'last_name': user.get('last_name', ''),
+                            'mobile': user.get('mobile', ''),
+                            'member_since': str(ms),
+                            'password_hash': user.get('password_hash')
+                        }
+            except Exception as e:
+                print(f"[ERROR] db fetch failed in get_user_profile: {e}")
+        
+        # --- DEVELOPER BACKDOOR / FALLBACK ---
         if os.environ.get('DEV_MODE') == 'true' or email == "admin@chitrastream.com":
+            print(f"DEBUG: Using DEV_MODE fallback for profile: {email}")
             return {
                 'id': email,
                 'email': email,
@@ -198,68 +250,7 @@ class Database:
             }
         # --------------------------
         
-        if not self.db: 
-            print("ERROR: Database not initialized in get_user_profile")
-            return None
-        try:
-            if not email:
-                return None
-            email = email.strip().lower()
-            print(f"DEBUG: Fetching profile for {email}...")
-            
-            users = self.get_collection('users')
-            if users is None:
-                print("DEBUG: users collection not found")
-                return None
-            
-            from google.api_core.retry import Retry
-            
-            print(f"DEBUG: Attempting doc({email}).get() with timeout...")
-            # Use specific retry logic so it doesn't hang indefinitely on 429 quota errors
-            custom_retry = Retry(initial=1.0, maximum=3.0, multiplier=2.0, deadline=5.0)
-            doc = users.document(email).get(retry=custom_retry, timeout=5.0)
-            print(f"DEBUG: doc({email}).get() finished. Exists: {doc.exists}")
-            
-            if not doc.exists:
-                return None
-            
-            user = doc.to_dict()
-            full_name = f"{user.get('first_name', '')} {user.get('last_name', '')}".strip()
-            
-            # Safe member_since handling
-            ms = user.get('created_at', 'Unknown')
-            if hasattr(ms, 'strftime'):
-                ms = ms.strftime('%B %d, %Y')
-            elif hasattr(ms, 'isoformat'):
-                ms = ms.isoformat()
-            
-            return {
-                'id': email,
-                'email': user.get('email', email),
-                'username': full_name or email,
-                'full_name': full_name or email,
-                'first_name': user.get('first_name', ''),
-                'last_name': user.get('last_name', ''),
-                'mobile': user.get('mobile', ''),
-                'member_since': str(ms),
-            }
-        except Exception as e:
-            print(f"[ERROR] get_user_profile: {e}")
-            if "Quota" in str(e) or "429" in str(e) or "RESOURCE_EXHAUSTED" in str(e):
-                print("[CRITICAL] Firestore Quota Exhausted! Returning dev profile if DEV_MODE is on.")
-                if os.environ.get('DEV_MODE') == 'true':
-                    return {
-                        'id': email,
-                        'email': email,
-                        'username': email.split('@')[0],
-                        'full_name': email.split('@')[0],
-                        'first_name': '',
-                        'last_name': '',
-                        'mobile': '',
-                        'member_since': 'Unknown',
-                    }
-                raise Exception("Firestore Quota Exhausted! Try again tomorrow.")
-            return None
+        return None
 
     def update_user_profile(self, email, first_name=None, last_name=None, mobile=None, **kwargs):
         try:
