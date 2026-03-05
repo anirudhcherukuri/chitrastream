@@ -16,7 +16,7 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy backend code first (excludes frontend/dist via .dockerignore)
-COPY app.py db.py db_mongo.py ./
+COPY app.py db.py ./
 COPY static/ ./static/
 COPY render.yaml ./
 

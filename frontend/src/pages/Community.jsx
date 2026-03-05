@@ -376,7 +376,7 @@ const POPULAR_GIFS = [
 ]
 
 export default function ChitraChat({ user }) {
-  const [currentRoom, setCurrentRoom] = useState('general')
+  const [currentRoom, setCurrentRoom] = useState(localStorage.getItem('chitra_room') || 'general')
   const [messages, setMessages] = useState([])
   const [messageInput, setMessageInput] = useState('')
   const [showGifs, setShowGifs] = useState(false)
@@ -394,9 +394,11 @@ export default function ChitraChat({ user }) {
       upgrade: true
     })
     setSocket(s)
+
     s.on('connect', () => {
       console.log('Socket connected!')
-      s.emit('join_room', { room: 'general' })
+      const savedRoom = localStorage.getItem('chitra_room') || 'general'
+      s.emit('join_room', { room: savedRoom })
     })
 
     s.on('room_history', ({ messages: msgs }) => {
@@ -404,7 +406,11 @@ export default function ChitraChat({ user }) {
     })
 
     s.on('receive_message', msg => {
-      setMessages(prev => [...prev, { ...msg, message: decryptMessage(msg.message) }])
+      setMessages(prev => {
+        // Prevent duplicate messages
+        if (prev.find(p => p.id === msg.id)) return prev;
+        return [...prev, { ...msg, message: decryptMessage(msg.message) }];
+      })
     })
 
     s.on('room_users_update', ({ count }) => {
@@ -413,6 +419,10 @@ export default function ChitraChat({ user }) {
 
     s.on('online_users_update', ({ count }) => {
       setOnlineCount(count)
+    })
+
+    s.on('disconnect', () => {
+      console.warn('Socket disconnected - trying to reconnect...')
     })
 
     return () => s.disconnect()
@@ -447,6 +457,15 @@ export default function ChitraChat({ user }) {
   }
 
   const activeRoom = CHAT_ROOMS.find(r => r.id === currentRoom) || CHAT_ROOMS[0]
+
+  const switchRoom = (roomId) => {
+    if (!socket) return
+    socket.emit('leave_room', { room: currentRoom })
+    setCurrentRoom(roomId)
+    localStorage.setItem('chitra_room', roomId)
+    setMessages([])
+    socket.emit('join_room', { room: roomId })
+  }
 
   return (
     <div className="wa-container">
@@ -500,6 +519,12 @@ export default function ChitraChat({ user }) {
             🛡️ Your messages are locked with ChitraStream E2EE. No one outside of this conversation can read them.
           </div>
 
+          {socket && !socket.connected && (
+            <div className="wa-e2ee-badge" style={{ background: 'rgba(255,50,50,0.1)', borderColor: 'red', color: 'red' }}>
+              Disconnected - Attempting to reconnect...
+            </div>
+          )}
+
           {messages.map((msg, i) => (
             <div key={i} className={`wa-msg ${msg.username === userName ? 'out' : 'in'}`}>
               <div className="wa-bubble">
@@ -548,7 +573,14 @@ export default function ChitraChat({ user }) {
               placeholder="Type a secure message..."
               value={messageInput}
               onChange={e => setMessageInput(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && sendMessage()}
+              onKeyDown={e => {
+                if (e.key === 'Enter') {
+                  sendMessage();
+                } else if (socket) {
+                  socket.emit('typing_start', { room: currentRoom });
+                }
+              }}
+              onBlur={() => socket && socket.emit('typing_stop', { room: currentRoom })}
             />
           </div>
           <button className="wa-send-btn" onClick={() => sendMessage()}>
@@ -558,11 +590,4 @@ export default function ChitraChat({ user }) {
       </div>
     </div>
   )
-
-  function switchRoom(roomId) {
-    socket.emit('leave_room', { room: currentRoom })
-    setCurrentRoom(roomId)
-    setMessages([])
-    socket.emit('join_room', { room: roomId })
-  }
 }

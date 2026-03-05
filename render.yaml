@@ -9,6 +9,9 @@ services:
         placeholder: "mongodb+srv://user:pass@cluster.mongodb.net/dbname"
       - key: DB_NAME
         value: "chitrastream"
+      - key: FIREBASE_CREDENTIALS
+        type: secret
+        placeholder: "Paste the entire JSON string from your service account key file here"
       - key: OPENAI_API_KEY
         type: secret
       - key: SECRET_KEY

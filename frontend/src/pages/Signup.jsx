@@ -2,42 +2,43 @@ import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 
 export default function Signup({ setUser }) {
-    const [form, setForm] = useState({ first_name: '', last_name: '', email: '', mobile: '', password: '', confirm_password: '' })
-    const [alert, setAlert] = useState(null)
-    const navigate = useNavigate()
+  const [form, setForm] = useState({ first_name: '', last_name: '', email: '', mobile: '', password: '', confirm_password: '' })
+  const [alert, setAlert] = useState(null)
+  const navigate = useNavigate()
 
-    const handleChange = e => setForm({ ...form, [e.target.name]: e.target.value })
+  const handleChange = e => setForm({ ...form, [e.target.name]: e.target.value })
 
-    const handleSubmit = async (e) => {
-        e.preventDefault()
-        setAlert(null)
-        if (form.password !== form.confirm_password) {
-            setAlert({ type: 'error', msg: 'Passwords do not match!' })
-            return
-        }
-        try {
-            const username = `${form.first_name} ${form.last_name}`.trim()
-            const res = await fetch('/api/auth/signup', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                credentials: 'include',
-                body: JSON.stringify({ username, email: form.email, password: form.password, mobile: form.mobile }),
-            })
-            const data = await res.json()
-            if (data.success) {
-                setUser(data.user)
-                navigate('/dashboard')
-            } else {
-                setAlert({ type: 'error', msg: data.message || 'Error creating account.' })
-            }
-        } catch {
-            setAlert({ type: 'error', msg: 'Something went wrong. Please try again.' })
-        }
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    setAlert(null)
+    if (form.password !== form.confirm_password) {
+      setAlert({ type: 'error', msg: 'Passwords do not match!' })
+      return
     }
+    try {
+      const username = `${form.first_name} ${form.last_name}`.trim()
+      const res = await fetch('/api/auth/signup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ username, email: form.email, password: form.password, mobile: form.mobile }),
+      })
+      const data = await res.json()
+      if (data.success) {
+        setAlert({ type: 'success', msg: 'Account created! Redirecting...' })
+        setUser(data.user)
+        setTimeout(() => navigate('/dashboard'), 500)
+      } else {
+        setAlert({ type: 'error', msg: data.message || 'Error creating account.' })
+      }
+    } catch {
+      setAlert({ type: 'error', msg: 'Something went wrong. Please try again.' })
+    }
+  }
 
-    return (
-        <>
-            <style>{`
+  return (
+    <>
+      <style>{`
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
           font-family: 'Poppins', sans-serif;
@@ -134,50 +135,50 @@ export default function Signup({ setUser }) {
           h1 { font-size: 28px; }
         }
       `}</style>
-            <div className="page">
-                <div className="container">
-                    <div className="logo-container">
-                        <img src="/static/logo.png" alt="ChitraStream" className="logo" />
-                        <h1>Join ChitraStream</h1>
-                        <p className="subtitle">Your premium entertainment destination</p>
-                    </div>
-                    {alert && <div className={`alert alert-${alert.type}`}>{alert.msg}</div>}
-                    <form onSubmit={handleSubmit}>
-                        <div className="form-row">
-                            <div className="form-group">
-                                <label>First Name <span className="required">*</span></label>
-                                <input type="text" name="first_name" value={form.first_name} onChange={handleChange} placeholder="John" required />
-                            </div>
-                            <div className="form-group">
-                                <label>Last Name <span className="required">*</span></label>
-                                <input type="text" name="last_name" value={form.last_name} onChange={handleChange} placeholder="Doe" required />
-                            </div>
-                        </div>
-                        <div className="form-group">
-                            <label>Email Address <span className="required">*</span></label>
-                            <input type="email" name="email" value={form.email} onChange={handleChange} placeholder="john.doe@example.com" required />
-                            <small>We'll never share your email</small>
-                        </div>
-                        <div className="form-group">
-                            <label>Mobile Number</label>
-                            <input type="tel" name="mobile" value={form.mobile} onChange={handleChange} placeholder="+91 98765 43210" />
-                        </div>
-                        <div className="form-group">
-                            <label>Password <span className="required">*</span></label>
-                            <input type="password" name="password" value={form.password} onChange={handleChange} placeholder="••••••••" minLength="8" required />
-                            <small>Minimum 8 characters</small>
-                        </div>
-                        <div className="form-group">
-                            <label>Confirm Password <span className="required">*</span></label>
-                            <input type="password" name="confirm_password" value={form.confirm_password} onChange={handleChange} placeholder="••••••••" required />
-                        </div>
-                        <button type="submit" className="btn">Create Account</button>
-                    </form>
-                    <div className="login-link">
-                        <p>Already have an account? <Link to="/login">Sign In</Link></p>
-                    </div>
-                </div>
+      <div className="page">
+        <div className="container">
+          <div className="logo-container">
+            <img src="/static/logo.png" alt="ChitraStream" className="logo" />
+            <h1>Join ChitraStream</h1>
+            <p className="subtitle">Your premium entertainment destination</p>
+          </div>
+          {alert && <div className={`alert alert-${alert.type}`}>{alert.msg}</div>}
+          <form onSubmit={handleSubmit}>
+            <div className="form-row">
+              <div className="form-group">
+                <label>First Name <span className="required">*</span></label>
+                <input type="text" name="first_name" value={form.first_name} onChange={handleChange} placeholder="John" required />
+              </div>
+              <div className="form-group">
+                <label>Last Name <span className="required">*</span></label>
+                <input type="text" name="last_name" value={form.last_name} onChange={handleChange} placeholder="Doe" required />
+              </div>
             </div>
-        </>
-    )
+            <div className="form-group">
+              <label>Email Address <span className="required">*</span></label>
+              <input type="email" name="email" value={form.email} onChange={handleChange} placeholder="john.doe@example.com" required />
+              <small>We'll never share your email</small>
+            </div>
+            <div className="form-group">
+              <label>Mobile Number</label>
+              <input type="tel" name="mobile" value={form.mobile} onChange={handleChange} placeholder="+91 98765 43210" />
+            </div>
+            <div className="form-group">
+              <label>Password <span className="required">*</span></label>
+              <input type="password" name="password" value={form.password} onChange={handleChange} placeholder="••••••••" minLength="8" required />
+              <small>Minimum 8 characters</small>
+            </div>
+            <div className="form-group">
+              <label>Confirm Password <span className="required">*</span></label>
+              <input type="password" name="confirm_password" value={form.confirm_password} onChange={handleChange} placeholder="••••••••" required />
+            </div>
+            <button type="submit" className="btn">Create Account</button>
+          </form>
+          <div className="login-link">
+            <p>Already have an account? <Link to="/login">Sign In</Link></p>
+          </div>
+        </div>
+      </div>
+    </>
+  )
 }
