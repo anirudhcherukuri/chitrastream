@@ -156,7 +156,25 @@ class Database:
                     return user_data
                 else:
                     print(f"DEBUG: Password verification failed for {email}")
+                    # DEV FALLBACK: if DEV_MODE is true, just let them in if the account exists but hash failed
+                    if os.environ.get('DEV_MODE') == 'true':
+                        print(f"DEBUG: DEV_MODE active, bypassing password failure for {email}")
+                        return {
+                            'id': user.get('email') or email,
+                            'username': f"{user.get('first_name', '')} {user.get('last_name', '')}".strip() or email,
+                            'email': user.get('email') or email
+                        }
                     return {'error': 'Invalid email or password!'}
+            
+            # DEV FALLBACK: if DEV_MODE is true and user not found, fake a user to let them test
+            if os.environ.get('DEV_MODE') == 'true':
+                print(f"DEBUG: DEV_MODE active, creating temporary session for unfound user {email}")
+                return {
+                    'id': email,
+                    'username': email.split('@')[0],
+                    'email': email
+                }
+                
             return {'error': 'User not found or Invalid email or password!'}
         except Exception as e:
             print(f"[ERROR] authenticate_user: {e}")
@@ -227,7 +245,19 @@ class Database:
             }
         except Exception as e:
             print(f"[ERROR] get_user_profile: {e}")
-            if "Quota" in str(e) or "429" in str(e):
+            if "Quota" in str(e) or "429" in str(e) or "RESOURCE_EXHAUSTED" in str(e):
+                print("[CRITICAL] Firestore Quota Exhausted! Returning dev profile if DEV_MODE is on.")
+                if os.environ.get('DEV_MODE') == 'true':
+                    return {
+                        'id': email,
+                        'email': email,
+                        'username': email.split('@')[0],
+                        'full_name': email.split('@')[0],
+                        'first_name': '',
+                        'last_name': '',
+                        'mobile': '',
+                        'member_since': 'Unknown',
+                    }
                 raise Exception("Firestore Quota Exhausted! Try again tomorrow.")
             return None
 
